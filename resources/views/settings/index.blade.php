@@ -18,23 +18,23 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div class="col-span-2">
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Nama Bisnis</label>
-                        <input type="text" name="app_name" value="Vehicle Wash" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
+                        <input type="text" name="app_name" value="{{ \App\Models\Setting::get('app_name', 'Vehicle Wash') }}" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email Kontak</label>
-                        <input type="email" name="contact_email" value="info@vehiclewash.id" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
+                        <input type="email" name="contact_email" value="{{ \App\Models\Setting::get('contact_email', 'info@vehiclewash.id') }}" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Nomor WhatsApp CS</label>
-                        <input type="text" name="whatsapp" value="08112345678" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
+                        <input type="text" name="whatsapp" value="{{ \App\Models\Setting::get('whatsapp', '08112345678') }}" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Radius Layanan (km)</label>
-                        <input type="number" name="service_radius" value="15" min="1" max="100" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
+                        <input type="number" name="service_radius" value="{{ \App\Models\Setting::get('service_radius', '15') }}" min="1" max="100" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Biaya Antar (Rp/km)</label>
-                        <input type="number" name="delivery_rate" value="2000" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
+                        <input type="number" name="delivery_rate" value="{{ \App\Models\Setting::get('delivery_rate', '2000') }}" class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50">
                     </div>
                 </div>
                 <div class="flex justify-end pt-2">
@@ -73,59 +73,26 @@
                 </form>
             </div>
 
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <form method="POST" action="/settings/notifications" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+                @csrf @method('PUT')
                 <h3 class="text-sm font-semibold text-slate-800 mb-3">Notifikasi</h3>
-                @foreach(['Booking baru masuk','Pembayaran diterima','Booking dibatalkan','Rating buruk (< 3 bintang)'] as $notif)
+                @php
+                $notifConfigs = [
+                    ['key' => 'notify_new_booking', 'label' => 'Booking baru masuk'],
+                    ['key' => 'notify_payment_received', 'label' => 'Pembayaran diterima'],
+                    ['key' => 'notify_booking_cancelled', 'label' => 'Booking dibatalkan'],
+                    ['key' => 'notify_bad_rating', 'label' => 'Rating buruk (< 3 bintang)'],
+                    ['key' => 'notify_new_customer', 'label' => 'Pendaftaran pelanggan baru'],
+                ];
+                @endphp
+                @foreach($notifConfigs as $cfg)
                 <label class="flex items-center gap-3 py-2.5 border-b border-slate-50 last:border-0 cursor-pointer">
-                    <input type="checkbox" checked class="w-4 h-4 rounded" style="accent-color:#F0C419;">
-                    <span class="text-xs text-slate-600">{{ $notif }}</span>
+                    <input type="checkbox" name="{{ $cfg['key'] }}" value="1" {{ \App\Models\Setting::get($cfg['key'], '1') === '1' ? 'checked' : '' }} class="w-4 h-4 rounded" style="accent-color:#F0C419;">
+                    <span class="text-xs text-slate-600">{{ $cfg['label'] }}</span>
                 </label>
                 @endforeach
-            </div>
-        </div>
-    </div>
-
-    {{-- Payment Gateway Config --}}
-    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100" id="payment">
-        <h3 class="font-semibold text-slate-800 mb-5">Konfigurasi Payment Gateway</h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div class="p-4 rounded-xl border-2 border-slate-200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                        <span class="text-blue-600 font-bold text-sm">MT</span>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-slate-800 text-sm">Midtrans</p>
-                        <span class="badge badge-green">Terhubung</span>
-                    </div>
-                </div>
-                <div class="space-y-3">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Server Key</label>
-                        <input type="password" value="SB-Mid-server-xxxx" class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-500 mb-1">Mode</label>
-                        <select class="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50">
-                            <option>Sandbox (Testing)</option>
-                            <option>Production</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="p-4 rounded-xl border-2 border-dashed border-slate-200">
-                <div class="flex items-center gap-3 mb-4">
-                    <div class="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
-                        <span class="text-green-600 font-bold text-sm">XE</span>
-                    </div>
-                    <div>
-                        <p class="font-semibold text-slate-800 text-sm">Xendit</p>
-                        <span class="badge badge-gray">Belum Terhubung</span>
-                    </div>
-                </div>
-                <p class="text-xs text-slate-400 mb-3">Hubungkan Xendit sebagai payment gateway cadangan.</p>
-                <button class="w-full py-2 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Hubungkan Xendit</button>
-            </div>
+                <button type="submit" class="w-full mt-3 py-2.5 text-xs font-semibold rounded-xl text-slate-900" style="background:#F0C419;">Simpan Notifikasi</button>
+            </form>
         </div>
     </div>
 </div>

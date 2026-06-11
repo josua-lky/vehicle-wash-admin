@@ -196,12 +196,82 @@
 
             <div class="flex items-center gap-2 ml-auto">
                 {{-- Notification --}}
-                <button class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
-                    </svg>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
-                </button>
+                <div x-data="{
+                    open: false,
+                    unreadCount: 0,
+                    notifications: [],
+                    init() {
+                        this.fetchNotifications();
+                        setInterval(() => this.fetchNotifications(), 5000);
+                    },
+                    async fetchNotifications() {
+                        try {
+                            const res = await fetch('/notifications/unread');
+                            const data = await res.json();
+                            this.unreadCount = data.count;
+                            this.notifications = data.notifications;
+                        } catch (e) {
+                            console.error('Failed fetching notifications', e);
+                        }
+                    },
+                    async markAsRead(id) {
+                        try {
+                            await fetch(`/notifications/${id}/read`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=&quot;csrf-token&quot;]').content,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            this.fetchNotifications();
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    },
+                    async markAllAsRead() {
+                        try {
+                            await fetch('/notifications/read-all', {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=&quot;csrf-token&quot;]').content,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            this.fetchNotifications();
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    }
+                }" class="relative">
+                    <button @click="open = !open" class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                        <span x-show="unreadCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" x-cloak></span>
+                    </button>
+
+                    <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
+                        <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                            <span class="text-xs font-semibold text-slate-700">Notifikasi (<span x-text="unreadCount"></span>)</span>
+                            <button x-show="unreadCount > 0" @click="markAllAsRead" class="text-[10px] text-blue-600 hover:underline">Tandai semua dibaca</button>
+                        </div>
+                        <div class="max-h-72 overflow-y-auto divide-y divide-slate-50">
+                            <template x-for="n in notifications" :key="n.id">
+                                <div class="p-3 hover:bg-slate-50 flex flex-col gap-0.5 cursor-pointer" @click="markAsRead(n.id)">
+                                    <div class="flex justify-between items-start">
+                                        <span class="text-[11px] font-bold text-slate-700" x-text="n.title"></span>
+                                        <span class="text-[9px] text-slate-400" x-text="new Date(n.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})"></span>
+                                    </div>
+                                    <p class="text-xs text-slate-500 leading-normal" x-text="n.body"></p>
+                                </div>
+                            </template>
+                            <div x-show="notifications.length === 0" class="p-6 text-center text-xs text-slate-400">Tidak ada notifikasi baru</div>
+                        </div>
+                        <div class="px-4 py-2 border-t border-slate-100 text-center bg-slate-50">
+                            <a href="/notifications" class="text-xs text-blue-600 hover:underline font-medium">Lihat semua notifikasi</a>
+                        </div>
+                    </div>
+                </div>
 
                 {{-- Date --}}
                 <div class="text-xs text-slate-400 hidden sm:block">{{ now()->isoFormat('dddd, D MMMM Y') }}</div>

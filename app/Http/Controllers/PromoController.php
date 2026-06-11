@@ -11,9 +11,53 @@ class PromoController extends Controller
     public function index()
     {
         $promos  = Promo::latest()->paginate(20);
+
+        // This month queries
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+
+        $totalUsage = \App\Models\PromoUsage::whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->count();
+
+        $totalDiscount = \App\Models\PromoUsage::whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->sum('discount_applied');
+
+        $avgDiscount = \App\Models\PromoUsage::whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->avg('discount_applied') ?? 0;
+
+        $mostUsedPromo = \App\Models\PromoUsage::selectRaw('promo_id, count(*) as count')
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->groupBy('promo_id')
+            ->orderByDesc('count')
+            ->first();
+
+        $mostUsedCode = '-';
+        if ($mostUsedPromo) {
+            $p = Promo::find($mostUsedPromo->promo_id);
+            if ($p) {
+                $mostUsedCode = $p->code;
+            }
+        }
+
+        $newActivePromos = Promo::where('status', 'active')
+            ->where(fn($q) => $q->whereNull('expires_at')->orWhere('expires_at', '>=', now()))
+            ->whereMonth('created_at', $currentMonth)
+            ->whereYear('created_at', $currentYear)
+            ->count();
+
         $stats = [
-            'active_promos'   => Promo::where('status','active')->where(fn($q)=>$q->whereNull('expires_at')->orWhere('expires_at','>=',now()))->count(),
+            'active_promos'     => Promo::where('status','active')->where(fn($q)=>$q->whereNull('expires_at')->orWhere('expires_at','>=',now()))->count(),
+            'new_active_promos' => $newActivePromos,
+            'total_usage'       => $totalUsage,
+            'total_discount'    => $totalDiscount,
+            'avg_discount'      => $avgDiscount,
+            'most_used_code'    => $mostUsedCode,
         ];
+
         return view('promos.index', compact('promos','stats'));
     }
 

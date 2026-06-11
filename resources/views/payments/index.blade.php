@@ -40,7 +40,11 @@
             </div>
             <div class="grid grid-cols-3 gap-4">
                 @php
-                $revStats = [['label'=>'Sukses','value'=>'Rp '.number_format(42100000,0,',','.'),'color'=>'#10B981'],['label'=>'Pending','value'=>'Rp '.number_format(2400000,0,',','.'),'color'=>'#F0C419'],['label'=>'Refund','value'=>'Rp '.number_format(780000,0,',','.'),'color'=>'#EF4444']];
+                $revStats = [
+                    ['label'=>'Sukses','value'=>'Rp '.number_format($stats['paid'] ?? 0, 0, ',', '.'),'color'=>'#10B981'],
+                    ['label'=>'Pending','value'=>'Rp '.number_format($stats['pending'] ?? 0, 0, ',', '.'),'color'=>'#F0C419'],
+                    ['label'=>'Refund','value'=>'Rp '.number_format($stats['refunded'] ?? 0, 0, ',', '.'),'color'=>'#EF4444']
+                ];
                 @endphp
                 @foreach($revStats as $rs)
                 <div class="p-3 rounded-xl" style="background:rgba(255,255,255,0.07);">
@@ -65,31 +69,48 @@
                 </div>
                 <p class="text-xs text-slate-500 mb-4">Proses pembayaran teknisi yang pending segera untuk menjaga kepercayaan tim.</p>
                 <div class="space-y-2 mb-4">
-                    @foreach([['Ahmad Fauzi','Rp 1.200.000','3 order'],['Budi Santoso','Rp 850.000','2 order'],['Citra Putri','Rp 1.540.000','4 order']] as [$name,$amount,$orders])
+                    @forelse($payouts ?? [] as $p)
                     <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
                         <div class="flex items-center gap-2">
-                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,#1B2337,#3B82F6);">{{ $name[0] }}</div>
+                            <div class="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold text-white overflow-hidden flex-shrink-0" style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
+                                @if($p['avatar'])
+                                <img src="{{ $p['avatar'] }}" alt="avatar" class="w-full h-full object-cover">
+                                @else
+                                {{ substr($p['name'], 0, 1) }}
+                                @endif
+                            </div>
                             <div>
-                                <p class="text-xs font-medium text-slate-700">{{ $name }}</p>
-                                <p class="text-xs text-slate-400">{{ $orders }}</p>
+                                <p class="text-xs font-medium text-slate-700">{{ $p['name'] }}</p>
+                                <p class="text-xs text-slate-400">{{ $p['orders_count'] }} order selesai</p>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold" style="color:#F0C419;">{{ $amount }}</span>
+                        <span class="text-xs font-semibold" style="color:#F0C419;">Rp {{ number_format($p['payout_amount'], 0, ',', '.') }}</span>
                     </div>
-                    @endforeach
+                    @empty
+                    <p class="text-xs text-slate-400 text-center py-4">Tidak ada payout tertunda.</p>
+                    @endforelse
                 </div>
-                <button class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-900" style="background:#F0C419;">
-                    Process All Payouts
+                @if(count($payouts ?? []) > 0)
+                <form action="/payments/process-payouts" method="POST">
+                    @csrf
+                    <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-900 active:scale-95 transition-all" style="background:#F0C419;">
+                        Process All Payouts
+                    </button>
+                </form>
+                @else
+                <button disabled class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-400 bg-slate-100 cursor-not-allowed">
+                    No Payouts to Process
                 </button>
+                @endif
             </div>
 
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <p class="text-xs font-semibold text-slate-400 uppercase mb-3">Metode Pembayaran</p>
-                @foreach([['OnoPay (E-Wallet)','100%','#F0C419']] as [$m,$p,$c])
+                @foreach($methodBreakdown ?? [] as $mb)
                 <div class="flex items-center gap-3 mb-2.5">
-                    <span class="text-xs text-slate-600 w-28">{{ $m }}</span>
-                    <div class="flex-1 h-2 bg-slate-100 rounded-full"><div class="h-full rounded-full" style="width:{{ $p }}; background:{{ $c }};"></div></div>
-                    <span class="text-xs font-semibold text-slate-700 w-8">{{ $p }}</span>
+                    <span class="text-xs text-slate-600 w-28 truncate">{{ $mb['label'] }}</span>
+                    <div class="flex-1 h-2 bg-slate-100 rounded-full"><div class="h-full rounded-full" style="width:{{ $mb['pct'] }}; background:{{ $mb['color'] }};"></div></div>
+                    <span class="text-xs font-semibold text-slate-700 w-8 text-right">{{ $mb['pct'] }}</span>
                 </div>
                 @endforeach
             </div>
@@ -97,23 +118,30 @@
     </div>
 
     {{-- FILTER BAR --}}
-    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-wrap gap-3">
+    <form method="GET" action="/payments" class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-48">
             <svg class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-            <input type="text" placeholder="Cari ID transaksi, nama..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg text-slate-600 bg-slate-50">
+            <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari ID transaksi, nama..." class="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-lg text-slate-600 bg-slate-50">
         </div>
-        <select class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-slate-50">
-            <option>Semua Status</option><option>Sukses</option><option>Pending</option><option>Gagal</option><option>Refund</option>
+        <select name="status" onchange="this.form.submit()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-slate-50">
+            <option value="">Semua Status</option>
+            <option value="paid" {{ request('status') === 'paid' ? 'selected' : '' }}>Sukses</option>
+            <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+            <option value="failed" {{ request('status') === 'failed' ? 'selected' : '' }}>Gagal</option>
+            <option value="refunded" {{ request('status') === 'refunded' ? 'selected' : '' }}>Refund</option>
         </select>
-        <select class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-slate-50">
-            <option>Semua Metode</option><option>OnoPay</option>
+        <select name="method" onchange="this.form.submit()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-slate-50">
+            <option value="">Semua Metode</option>
+            <option value="ewallet" {{ request('method') === 'ewallet' ? 'selected' : '' }}>OnoPay</option>
         </select>
         <div class="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-            <input type="date" value="{{ date('Y-m-01') }}" class="text-sm text-slate-600 bg-transparent">
+            <input type="date" name="date_from" value="{{ request('date_from', date('Y-m-01')) }}" onchange="this.form.submit()" class="text-sm text-slate-600 bg-transparent">
             <span class="text-slate-300 text-xs">—</span>
-            <input type="date" value="{{ date('Y-m-d') }}" class="text-sm text-slate-600 bg-transparent">
+            <input type="date" name="date_to" value="{{ request('date_to', date('Y-m-d')) }}" onchange="this.form.submit()" class="text-sm text-slate-600 bg-transparent">
         </div>
-    </div>
+        <button type="submit" class="text-xs font-semibold px-4 py-2 rounded-lg text-white" style="background:#1B2337;">Filter</button>
+        <a href="/payments" class="text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 flex items-center justify-center">Reset</a>
+    </form>
 
     {{-- TRANSACTION TABLE --}}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
@@ -242,19 +270,26 @@
 
 @push('scripts')
 <script>
+const revenueData = @json($revenueData ?? array_fill(0, 12, 0));
+const revenueLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+
 const rCtx = document.getElementById('revenueChart').getContext('2d');
 new Chart(rCtx, {
     type: 'line',
     data: {
-        labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'],
+        labels: revenueLabels,
         datasets: [
-            { label: 'Revenue', data: [28,32,35,30,38,42,45,39,43,48,45,0], borderColor: '#F0C419', backgroundColor: 'rgba(240,196,25,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 },
-            { label: 'Target', data: [35,35,35,35,40,40,40,45,45,45,45,45], borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1.5, borderDash: [4,4], tension: 0, pointRadius: 0, fill: false }
+            { label: 'Revenue', data: revenueData, borderColor: '#F0C419', backgroundColor: 'rgba(240,196,25,0.1)', borderWidth: 2, tension: 0.4, fill: true, pointRadius: 0 },
+            { label: 'Target', data: [500000, 500000, 500000, 500000, 1000000, 1000000, 1000000, 1500000, 1500000, 1500000, 1500000, 1500000], borderColor: 'rgba(255,255,255,0.2)', borderWidth: 1.5, borderDash: [4,4], tension: 0, pointRadius: 0, fill: false }
         ]
     },
     options: {
         responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: false }, tooltip: {
+            backgroundColor: '#1B2337', titleColor: '#fff', bodyColor: '#94A3B8',
+            padding: 10, cornerRadius: 8,
+            callbacks: { label: (c) => ` Rp ${c.parsed.y.toLocaleString('id-ID')}` }
+        }},
         scales: {
             y: { display: false },
             x: { grid: { display: false }, border: { display: false }, ticks: { color: 'rgba(255,255,255,0.3)', font: { size: 9 } } }

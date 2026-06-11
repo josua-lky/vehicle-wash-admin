@@ -10,12 +10,6 @@
             <h1 class="text-xl font-bold text-slate-800">Promos</h1>
             <p class="text-sm text-slate-500 mt-0.5">Kelola program promo dan voucher</p>
         </div>
-        <button @click="showAddPromo=true"
-                class="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg shadow"
-                style="background:#F0C419; color:#1B2337;">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
-            Buat Promo Baru
-        </button>
     </div>
 
     {{-- STAT CARDS --}}
@@ -23,9 +17,13 @@
         <div class="stat-card bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex justify-between items-center">
             <div>
                 <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">Total Active Promos</p>
-                <p class="text-3xl font-bold text-slate-800">{{ $stats['active_promos'] ?? 12 }}</p>
+                <p class="text-3xl font-bold text-slate-800">{{ $stats['active_promos'] ?? 0 }}</p>
             </div>
-            <span class="badge badge-green">+3 baru aktif</span>
+            @if(($stats['new_active_promos'] ?? 0) > 0)
+            <span class="badge badge-green">+{{ $stats['new_active_promos'] }} baru aktif</span>
+            @else
+            <span class="badge badge-gray">Tidak ada promo baru aktif</span>
+            @endif
         </div>
     </div>
 
@@ -235,10 +233,22 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <h3 class="text-sm font-semibold text-slate-800 mb-4">Statistik Promo Bulan Ini</h3>
                 <div class="space-y-3 text-xs">
-                    <div class="flex justify-between"><span class="text-slate-500">Total Penggunaan Voucher</span><span class="font-semibold text-slate-800">1,247x</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Total Diskon Diberikan</span><span class="font-semibold text-slate-800">Rp 4,2 jt</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Rata-rata Diskon/Transaksi</span><span class="font-semibold text-slate-800">Rp 18.400</span></div>
-                    <div class="flex justify-between"><span class="text-slate-500">Promo Paling Banyak Dipakai</span><span class="font-semibold" style="color:#F0C419;">FIRST50</span></div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Total Penggunaan Voucher</span>
+                        <span class="font-semibold text-slate-800">{{ number_format($stats['total_usage'] ?? 0, 0, ',', '.') }}x</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Total Diskon Diberikan</span>
+                        <span class="font-semibold text-slate-800">Rp {{ number_format($stats['total_discount'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Rata-rata Diskon/Transaksi</span>
+                        <span class="font-semibold text-slate-800">Rp {{ number_format($stats['avg_discount'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-slate-500">Promo Paling Banyak Dipakai</span>
+                        <span class="font-semibold" style="color:#F0C419;">{{ $stats['most_used_code'] ?? '-' }}</span>
+                    </div>
                 </div>
             </div>
         </div>

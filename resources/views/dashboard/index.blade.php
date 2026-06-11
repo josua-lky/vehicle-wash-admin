@@ -2,7 +2,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
-<div class="p-6 space-y-6">
+<div class="p-6 space-y-6" x-data="dashboardPage()">
 
     {{-- ── PAGE HEADER ── --}}
     <div class="flex items-center justify-between">
@@ -39,7 +39,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
-                <span class="text-xs font-semibold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">+12.5%</span>
+                @php $isPos = ($stats['bookings_today_pct'] ?? 0) >= 0; @endphp
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full {{ $isPos ? 'text-green-600 bg-green-50' : 'text-red-600 bg-red-50' }}">
+                    {{ $isPos ? '+' : '' }}{{ $stats['bookings_today_pct'] ?? 0 }}%
+                </span>
                 <span class="text-xs text-slate-400">dari kemarin</span>
             </div>
         </div>
@@ -58,8 +61,8 @@
                 </div>
             </div>
             <div class="flex items-center gap-3 text-xs text-slate-500">
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400"></span> 24 online</span>
-                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span> 14 offline</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-green-400"></span> {{ $stats['active_clients'] ?? 0 }} online</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span> {{ $stats['inactive_clients'] ?? 0 }} offline</span>
             </div>
         </div>
 
@@ -77,7 +80,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-1.5">
-                <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:rgba(240,196,25,0.2); color:#F0C419;">+8.3%</span>
+                @php $isRevPos = ($stats['revenue_change_pct'] ?? 0) >= 0; @endphp
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full" style="background:{{ $isRevPos ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)' }}; color:{{ $isRevPos ? '#10B981' : '#EF4444' }};">
+                    {{ $isRevPos ? '+' : '' }}{{ $stats['revenue_change_pct'] ?? 0 }}%
+                </span>
                 <span class="text-xs" style="color:#7C8DB5;">bulan ini</span>
             </div>
         </div>
@@ -96,9 +102,9 @@
                 </div>
             </div>
             <div class="w-full bg-slate-100 rounded-full h-1.5 mt-1">
-                <div class="h-1.5 rounded-full" style="width:68%; background:#A78BFA;"></div>
+                <div class="h-1.5 rounded-full" style="width:{{ $stats['tech_utilization'] ?? 0 }}%; background:#A78BFA;"></div>
             </div>
-            <p class="text-xs text-slate-400 mt-1.5">68% utilisasi kapasitas</p>
+            <p class="text-xs text-slate-400 mt-1.5">{{ $stats['tech_utilization'] ?? 0 }}% utilisasi kapasitas</p>
         </div>
     </div>
 
@@ -109,12 +115,18 @@
         <div class="xl:col-span-3 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
             <div class="flex items-center justify-between mb-6">
                 <div>
-                    <h3 class="font-semibold text-slate-800">Tren Transaksi Bulanan</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Jumlah booking per bulan</p>
+                    <h3 class="font-semibold text-slate-800" x-text="activeTrend === 'monthly' ? 'Tren Transaksi Bulanan' : 'Tren Transaksi Mingguan'">Tren Transaksi Bulanan</h3>
+                    <p class="text-xs text-slate-400 mt-0.5" x-text="activeTrend === 'monthly' ? 'Jumlah booking per bulan' : 'Jumlah booking per hari (minggu ini)'">Jumlah booking per bulan</p>
                 </div>
                 <div class="flex items-center gap-2">
-                    <button class="text-xs px-3 py-1.5 rounded-lg font-medium text-white" style="background:#F0C419; color:#1B2337;">Bulanan</button>
-                    <button class="text-xs px-3 py-1.5 rounded-lg font-medium text-slate-500 hover:bg-slate-50">Mingguan</button>
+                    <button @click="switchTrend('monthly')"
+                            :style="activeTrend === 'monthly' ? 'background:#F0C419; color:#1B2337;' : ''"
+                            :class="activeTrend === 'monthly' ? 'text-white' : 'text-slate-500 hover:bg-slate-50'"
+                            class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">Bulanan</button>
+                    <button @click="switchTrend('weekly')"
+                            :style="activeTrend === 'weekly' ? 'background:#F0C419; color:#1B2337;' : ''"
+                            :class="activeTrend === 'weekly' ? 'text-white' : 'text-slate-500 hover:bg-slate-50'"
+                            class="text-xs px-3 py-1.5 rounded-lg font-medium transition-colors">Mingguan</button>
                 </div>
             </div>
             <canvas id="transactionChart" height="200"></canvas>
@@ -164,49 +176,22 @@
         </div>
     </div>
 
-    {{-- ── BOTTOM ROW: Map + Quick Stats ── --}}
-    <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-        {{-- Vehicle Coverage Map --}}
-        <div class="xl:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <div class="flex items-center justify-between mb-4">
-                <div>
-                    <h3 class="font-semibold text-slate-800">Vehicle Coverage Map</h3>
-                    <p class="text-xs text-slate-400 mt-0.5">Sebaran lokasi teknisi aktif saat ini</p>
-                </div>
-                <a href="/technicians" class="text-sm font-medium px-4 py-2 rounded-lg text-white" style="background:#1B2337;">
-                    Atur Live Now
-                </a>
-            </div>
-            {{-- Map placeholder (ganti dengan Google Maps Embed atau Leaflet.js) --}}
-            <div class="relative rounded-xl overflow-hidden" style="height:220px; background:linear-gradient(135deg,#1B2337 0%,#252D41 100%);">
-                <div class="absolute inset-0 opacity-20"
-                     style="background-image: radial-gradient(rgba(240,196,25,0.3) 1px, transparent 1px); background-size:30px 30px;"></div>
-                {{-- Fake map pins --}}
-                @foreach([['15%','30%'],['40%','50%'],['65%','25%'],['75%','60%'],['30%','70%'],['55%','40%']] as $i=>$pos)
-                <div class="absolute flex items-center justify-center" style="left:{{ $pos[0] }}; top:{{ $pos[1] }}; transform:translate(-50%,-50%)">
-                    <div class="w-3 h-3 rounded-full animate-pulse" style="background:#F0C419;"></div>
-                    <div class="absolute w-6 h-6 rounded-full opacity-30" style="background:#F0C419;"></div>
-                </div>
-                @endforeach
-                <div class="absolute bottom-4 left-4 text-xs text-white opacity-60">● {{ $stats['active_technicians'] ?? 24 }} Teknisi Online</div>
-            </div>
-        </div>
-
-        {{-- Quick Performance --}}
-        <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
-            <h3 class="font-semibold text-slate-800 mb-5">Performa Hari Ini</h3>
+    {{-- ── BOTTOM ROW: Quick Stats ── --}}
+    <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {{-- Progress Bars --}}
             <div class="space-y-4">
+                <h3 class="font-semibold text-slate-800 mb-4">Performa Hari Ini</h3>
                 @php
                 $perfs = [
-                    ['label'=>'Selesai','value'=>89,'total'=>142,'color'=>'#10B981'],
-                    ['label'=>'Dalam Proses','value'=>31,'total'=>142,'color'=>'#3B82F6'],
-                    ['label'=>'Pending','value'=>15,'total'=>142,'color'=>'#F59E0B'],
-                    ['label'=>'Dibatalkan','value'=>7,'total'=>142,'color'=>'#EF4444'],
+                    ['label'=>'Selesai','value'=>$stats['perf_completed'] ?? 0,'total'=>$stats['perf_total'] ?? 0,'color'=>'#10B981'],
+                    ['label'=>'Dalam Proses','value'=>$stats['perf_in_progress'] ?? 0,'total'=>$stats['perf_total'] ?? 0,'color'=>'#3B82F6'],
+                    ['label'=>'Pending','value'=>$stats['perf_pending'] ?? 0,'total'=>$stats['perf_total'] ?? 0,'color'=>'#F59E0B'],
+                    ['label'=>'Dibatalkan','value'=>$stats['perf_cancelled'] ?? 0,'total'=>$stats['perf_total'] ?? 0,'color'=>'#EF4444'],
                 ];
                 @endphp
                 @foreach($perfs as $p)
-                @php $pct = round($p['value']/$p['total']*100); @endphp
+                @php $pct = $p['total'] > 0 ? round($p['value']/$p['total']*100) : 0; @endphp
                 <div>
                     <div class="flex items-center justify-between text-xs mb-1.5">
                         <span class="text-slate-600 font-medium">{{ $p['label'] }}</span>
@@ -218,17 +203,20 @@
                 </div>
                 @endforeach
             </div>
-            <div class="mt-6 pt-4 border-t border-slate-100">
-                <p class="text-xs text-slate-400 mb-2">Rating Rata-rata Hari Ini</p>
-                <div class="flex items-center gap-2">
-                    <div class="flex">
-                        @for($i=1;$i<=5;$i++)
-                        <svg class="w-4 h-4 {{ $i<=4 ? '' : 'opacity-30' }}" style="color:#F0C419;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                        @endfor
-                    </div>
-                    <span class="text-sm font-bold text-slate-800">4.82</span>
-                    <span class="text-xs text-slate-400">/ 5.0</span>
+
+            {{-- Ratings Card --}}
+            <div class="flex flex-col justify-center items-center p-6 bg-slate-50/50 rounded-2xl border border-slate-100 text-center">
+                <p class="text-sm font-semibold text-slate-500 mb-2">Rating Rata-rata Hari Ini</p>
+                <div class="flex items-baseline gap-1.5 mb-3">
+                    <span class="text-4xl font-extrabold text-slate-800">4.8</span>
+                    <span class="text-sm text-slate-400">/ 5.0</span>
                 </div>
+                <div class="flex gap-1 mb-2">
+                    @for($i=1;$i<=5;$i++)
+                    <svg class="w-5 h-5 {{ $i<=4 ? '' : 'opacity-30' }}" style="color:#F0C419;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                    @endfor
+                </div>
+                <p class="text-xs text-slate-400">Berdasarkan ulasan pelanggan hari ini</p>
             </div>
         </div>
     </div>
@@ -238,17 +226,44 @@
 
 @push('scripts')
 <script>
+const monthlyData = @json($monthlyData);
+const weeklyData = @json($weeklyData);
+const monthlyLabels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+const weeklyLabels = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
+
+function dashboardPage() {
+    return {
+        activeTrend: 'monthly',
+        init() {
+            window.dashboardApp = this;
+        },
+        switchTrend(type) {
+            this.activeTrend = type;
+            if (type === 'monthly') {
+                window.transactionChart.data.labels = monthlyLabels;
+                window.transactionChart.data.datasets[0].data = monthlyData;
+            } else {
+                window.transactionChart.data.labels = weeklyLabels;
+                window.transactionChart.data.datasets[0].data = weeklyData;
+            }
+            window.transactionChart.update();
+        }
+    }
+}
+
 const ctx = document.getElementById('transactionChart').getContext('2d');
-new Chart(ctx, {
+window.transactionChart = new Chart(ctx, {
     type: 'bar',
     data: {
-        labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'],
+        labels: monthlyLabels,
         datasets: [{
             label: 'Total Booking',
-            data: [85, 92, 108, 125, 98, 134, 145, 138, 122, 156, 142, 0],
-            backgroundColor: (ctx) => {
-                const i = ctx.dataIndex;
-                return i === 10 ? '#F0C419' : 'rgba(240,196,25,0.25)';
+            data: monthlyData,
+            backgroundColor: (context) => {
+                const i = context.dataIndex;
+                const activeTrend = window.dashboardApp ? window.dashboardApp.activeTrend : 'monthly';
+                const activeIndex = activeTrend === 'monthly' ? new Date().getMonth() : (new Date().getDay() + 6) % 7;
+                return i === activeIndex ? '#F0C419' : 'rgba(240,196,25,0.25)';
             },
             borderRadius: 6,
             borderSkipped: false,

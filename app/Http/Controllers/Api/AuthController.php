@@ -40,6 +40,13 @@ class AuthController extends Controller
             'status' => 'active',
         ]);
 
+        \App\Models\PushNotification::notifyAdmin(
+            'new_customer',
+            'Pelanggan Baru',
+            "Pelanggan baru {$customer->name} ({$customer->phone}) telah mendaftar.",
+            ['customer_id' => $customer->id]
+        );
+
         if (!empty($validated['address'])) {
             \App\Models\UserAddress::create([
                 'customer_id' => $customer->id,

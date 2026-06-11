@@ -10,37 +10,39 @@
             <h1 class="text-xl font-bold text-slate-800">Reports & Analytics</h1>
             <p class="text-sm text-slate-500 mt-0.5">Analisis performa dan pendapatan layanan Vehicle Wash</p>
         </div>
-        <div class="flex gap-2">
-            <select class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
-                <option>Semua Outlet</option>
+        <form method="GET" action="/reports" class="flex gap-2" id="filterForm">
+            <select name="outlet_id" onchange="this.form.submit()" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
+                <option value="">Semua Outlet</option>
                 @foreach($outlets ?? [] as $o)
-                <option>{{ is_array($o) ? $o['name'] : $o->name }}</option>
+                <option value="{{ is_array($o) ? $o['id'] : $o->id }}" {{ request('outlet_id') == (is_array($o) ? $o['id'] : $o->id) ? 'selected' : '' }}>
+                    {{ is_array($o) ? $o['name'] : $o->name }}
+                </option>
                 @endforeach
             </select>
             <div class="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-3 py-2">
-                <input type="date" value="{{ date('Y-m-01') }}" class="text-sm text-slate-600 bg-transparent">
+                <input type="date" name="date_from" value="{{ $from }}" onchange="this.form.submit()" class="text-sm text-slate-600 bg-transparent">
                 <span class="text-slate-300">—</span>
-                <input type="date" value="{{ date('Y-m-d') }}" class="text-sm text-slate-600 bg-transparent">
+                <input type="date" name="date_to" value="{{ $to }}" onchange="this.form.submit()" class="text-sm text-slate-600 bg-transparent">
             </div>
-            <a href="/reports/export?format=excel" class="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:#10B981;">
+            <a href="/reports/export?format=excel&outlet_id={{ request('outlet_id') }}&date_from={{ $from }}&date_to={{ $to }}" class="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:#10B981;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Export Excel
             </a>
-            <a href="/reports/export?format=pdf" class="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-slate-900" style="background:#F0C419;">
+            <a href="/reports/export?format=pdf&outlet_id={{ request('outlet_id') }}&date_from={{ $from }}&date_to={{ $to }}" class="flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg text-slate-900" style="background:#F0C419;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 Export PDF
             </a>
-        </div>
+        </form>
     </div>
 
     {{-- STAT CARDS --}}
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
         @php
         $rStats = [
-            ['label'=>'Monthly Revenue','value'=>'Rp 42,850,000','change'=>'+5.2%','up'=>true,'sub'=>'Rp 40,700,000 bulan lalu'],
-            ['label'=>'Orders Served','value'=>'1,294','change'=>'+8.1%','up'=>true,'sub'=>'24,533 rata-rata bulanan'],
-            ['label'=>'Avg. Per Order','value'=>'Rp 33,120','change'=>'-2.3%','up'=>false,'sub'=>'vs Rp 33,890 bulan lalu'],
-            ['label'=>'Satisfaction','value'=>'98.2%','change'=>'+0.4%','up'=>true,'sub'=>'dari 1,204 ulasan'],
+            ['label'=>'Monthly Revenue','value'=>$stats['monthly_revenue']['value'],'change'=>$stats['monthly_revenue']['change'],'up'=>$stats['monthly_revenue']['up'],'sub'=>$stats['monthly_revenue']['sub']],
+            ['label'=>'Orders Served','value'=>$stats['orders_served']['value'],'change'=>$stats['orders_served']['change'],'up'=>$stats['orders_served']['up'],'sub'=>$stats['orders_served']['sub']],
+            ['label'=>'Avg. Per Order','value'=>$stats['avg_per_order']['value'],'change'=>$stats['avg_per_order']['change'],'up'=>$stats['avg_per_order']['up'],'sub'=>$stats['avg_per_order']['sub']],
+            ['label'=>'Satisfaction','value'=>$stats['satisfaction']['value'],'change'=>$stats['satisfaction']['change'],'up'=>$stats['satisfaction']['up'],'sub'=>$stats['satisfaction']['sub']],
         ];
         @endphp
         @foreach($rStats as $s)
@@ -66,8 +68,8 @@
                     <p class="text-xs text-slate-400 mt-0.5">Pendapatan & volume order 12 bulan terakhir</p>
                 </div>
                 <div class="flex gap-2 text-xs">
-                    <button class="px-3 py-1.5 rounded-lg font-medium text-white" style="background:#1B2337;">Revenue</button>
-                    <button class="px-3 py-1.5 rounded-lg font-medium text-slate-500 border border-slate-200 hover:bg-slate-50">Volume</button>
+                    <button id="btn-revenue" class="px-3 py-1.5 rounded-lg font-medium text-white transition-all duration-200" style="background:#1B2337;">Revenue</button>
+                    <button id="btn-volume" class="px-3 py-1.5 rounded-lg font-medium text-slate-500 border border-slate-200 hover:bg-slate-50 transition-all duration-200">Volume</button>
                 </div>
             </div>
             <div class="relative w-full" style="height: 320px;">
@@ -80,17 +82,14 @@
             <h3 class="font-semibold text-slate-800 mb-1">Service Type Distribution</h3>
             <p class="text-xs text-slate-400 mb-5">Persentase berdasarkan jenis layanan</p>
             <div class="space-y-4">
-                @php
-                $services=[['Premium Full Wash','40%','#1B2337'],['Standard Exterior','33%','#F0C419'],['Home Detailing','16%','#3B82F6'],['LS Priority Club','5%','#10B981'],['Lainnya','6%','#94A3B8']];
-                @endphp
-                @foreach($services as [$label,$pct,$color])
+                @foreach($serviceDistribution as $sd)
                 <div>
                     <div class="flex justify-between text-xs mb-1.5">
-                        <span class="text-slate-600">{{ $label }}</span>
-                        <span class="font-semibold text-slate-800">{{ $pct }}</span>
+                        <span class="text-slate-600">{{ $sd['label'] }}</span>
+                        <span class="font-semibold text-slate-800">{{ $sd['pct'] }}</span>
                     </div>
                     <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                        <div class="h-full rounded-full transition-all duration-700" style="width:{{ $pct }}; background:{{ $color }};"></div>
+                        <div class="h-full rounded-full transition-all duration-700" style="width:{{ $sd['pct'] }}; background:{{ $sd['color'] }};"></div>
                     </div>
                 </div>
                 @endforeach
@@ -119,18 +118,18 @@
                 <a href="/technicians" class="text-xs" style="color:#F0C419;">Lihat Semua →</a>
             </div>
             <div class="space-y-3">
-                @foreach([['Ahmad Fauzi',248,'4.9','#F0C419','🥇'],['Citra Putri',312,'4.8','#94A3B8','🥈'],['Budi Santoso',185,'4.7','#CD7F32','🥉'],['Eko Prasetyo',198,'4.6','#64748B','4'],['Fitri Handayani',143,'4.5','#64748B','5']] as [$name,$orders,$rating,$color,$medal])
+                @foreach($leaderboard as $t)
                 <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-slate-50">
-                    <span class="text-lg">{{ $medal }}</span>
-                    <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white" style="background:linear-gradient(135deg,#1B2337,#3B82F6);">{{ $name[0] }}</div>
+                    <span class="text-lg w-6 text-center">{{ $t['medal'] }}</span>
+                    <img src="{{ $t['avatar'] }}" class="w-8 h-8 rounded-full object-cover" alt="{{ $t['name'] }}">
                     <div class="flex-1">
-                        <p class="text-sm font-semibold text-slate-700">{{ $name }}</p>
-                        <p class="text-xs text-slate-400">{{ $orders }} order selesai</p>
+                        <p class="text-sm font-semibold text-slate-700">{{ $t['name'] }}</p>
+                        <p class="text-xs text-slate-400">{{ $t['orders'] }} order selesai</p>
                     </div>
                     <div class="text-right">
                         <div class="flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" style="color:#F0C419;" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                            <span class="text-sm font-bold text-slate-700">{{ $rating }}</span>
+                            <span class="text-sm font-bold text-slate-700">{{ $t['rating'] }}</span>
                         </div>
                     </div>
                 </div>
@@ -159,26 +158,36 @@
                 </thead>
                 <tbody class="divide-y divide-slate-50">
                     @php
-                    $recentTxn=[
-                        ['id'=>'#CV-2024-8481','date'=>'13 Okt 2024','vehicle'=>'Toyota Model X','service'=>'Premium Full Wash','status'=>'active','amount'=>'Rp 55,000'],
-                        ['id'=>'#CV-2024-8480','date'=>'12 Okt 2024','vehicle'=>'Honda Beat','service'=>'Standard Exterior','status'=>'active','amount'=>'Rp 25,000'],
-                        ['id'=>'#CV-2024-8479','date'=>'12 Okt 2024','vehicle'=>'Free D40 Pro','service'=>'Home Detailing','status'=>'inactive','amount'=>'Rp 150,000'],
-                        ['id'=>'#CV-2024-8478','date'=>'12 Okt 2024','vehicle'=>'JRN Arc 30','service'=>'LS Priority Club','status'=>'active','amount'=>'Rp 380,000'],
-                        ['id'=>'#CV-2024-8477','date'=>'11 Okt 2024','vehicle'=>'Toyota Avanza','service'=>'Standard Exterior','status'=>'active','amount'=>'Rp 35,000'],
-                    ];
+                    $months_id = ['Jan' => 'Jan', 'Feb' => 'Feb', 'Mar' => 'Mar', 'Apr' => 'Apr', 'May' => 'Mei', 'Jun' => 'Jun', 'Jul' => 'Jul', 'Aug' => 'Ags', 'Sep' => 'Sep', 'Oct' => 'Okt', 'Nov' => 'Nov', 'Dec' => 'Des'];
                     @endphp
-                    @foreach($recentTxn as $t)
+                    @forelse($recentPayments as $p)
+                    @php
+                        $payBookingCode = $p->booking ? $p->booking->booking_code : '-';
+                        $dt = $p->paid_at ?? $p->created_at;
+                        $dateStr = $dt ? $dt->format('d') . ' ' . ($months_id[$dt->format('M')] ?? $dt->format('M')) . ' ' . $dt->format('Y') : '-';
+                        $vehicleName = $p->booking ? $p->booking->vehicle_name : '-';
+                        $packageName = $p->booking && $p->booking->package ? $p->booking->package->name : ($p->booking->service_type === 'home' ? 'Home Detailing' : 'Standard Wash');
+                        
+                        $payStatusBadge=['paid'=>['Sukses','badge-green'],'pending'=>['Pending','badge-yellow'],'failed'=>['Gagal','badge-red'],'refunded'=>['Refund','badge-purple'],'expired'=>['Expired','badge-gray']];
+                        [$slabel,$sclass] = $payStatusBadge[$p->status] ?? ['—','badge-gray'];
+                    @endphp
                     <tr class="table-row">
-                        <td class="px-5 py-3.5 font-mono text-xs font-semibold text-slate-700">{{ $t['id'] }}</td>
-                        <td class="px-4 py-3.5 text-xs text-slate-600">{{ $t['date'] }}</td>
-                        <td class="px-4 py-3.5 text-xs text-slate-700">{{ $t['vehicle'] }}</td>
-                        <td class="px-4 py-3.5 text-xs text-slate-600">{{ $t['service'] }}</td>
+                        <td class="px-5 py-3.5 font-mono text-xs font-semibold text-slate-700">{{ $payBookingCode }}</td>
+                        <td class="px-4 py-3.5 text-xs text-slate-600">{{ $dateStr }}</td>
+                        <td class="px-4 py-3.5 text-xs text-slate-700">{{ $vehicleName }}</td>
+                        <td class="px-4 py-3.5 text-xs text-slate-600">{{ $packageName }}</td>
                         <td class="px-4 py-3.5">
-                            <span class="badge {{ $t['status']==='active'?'badge-green':'badge-red' }}">{{ $t['status']==='active'?'Aktif':'Nonaktif' }}</span>
+                            <span class="badge {{ $sclass }}">{{ $slabel }}</span>
                         </td>
-                        <td class="px-4 py-3.5 font-semibold text-slate-800 text-xs">{{ $t['amount'] }}</td>
+                        <td class="px-4 py-3.5 font-semibold text-slate-800 text-xs">Rp {{ number_format($p->amount, 0, ',', '.') }}</td>
                     </tr>
-                    @endforeach
+                    @empty
+                    <tr>
+                        <td colspan="6" class="px-5 py-8 text-center text-slate-400 text-sm">
+                            Tidak ada transaksi dalam periode ini.
+                        </td>
+                    </tr>
+                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -189,13 +198,28 @@
 @push('scripts')
 <script>
 // Revenue trend chart
-new Chart(document.getElementById('revenueChart').getContext('2d'), {
+const chartData = {
+    revenue: {
+        label: 'Revenue (jt)',
+        data: {!! json_encode($revenueData) !!},
+        target: {!! json_encode($targetRevenue) !!},
+        targetLabel: 'Target Revenue (jt)'
+    },
+    volume: {
+        label: 'Volume (order)',
+        data: {!! json_encode($volumeData) !!},
+        target: {!! json_encode($targetVolume) !!},
+        targetLabel: 'Target Volume (order)'
+    }
+};
+
+const revenueChart = new Chart(document.getElementById('revenueChart').getContext('2d'), {
     type: 'bar',
     data: {
-        labels: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'],
+        labels: {!! json_encode($months) !!},
         datasets: [
-            { type: 'line', label: 'Target', data: [35,35,38,38,42,42,44,44,46,46,48,48], borderColor: 'rgba(240,196,25,0.4)', borderWidth: 1.5, borderDash: [5,5], pointRadius: 0, fill: false, tension: 0 },
-            { type: 'bar', label: 'Revenue (jt)', data: [28,32,35,30,38,42,45,39,43,48,43,0], backgroundColor: (ctx) => ctx.dataIndex === 9 ? '#F0C419' : 'rgba(240,196,25,0.2)', borderRadius: 5, borderSkipped: false }
+            { type: 'line', label: 'Target', data: chartData.revenue.target, borderColor: 'rgba(240,196,25,0.4)', borderWidth: 1.5, borderDash: [5,5], pointRadius: 0, fill: false, tension: 0 },
+            { type: 'bar', label: 'Revenue (jt)', data: chartData.revenue.data, backgroundColor: (ctx) => ctx.dataIndex === 11 ? '#F0C419' : 'rgba(240,196,25,0.2)', borderRadius: 5, borderSkipped: false }
         ]
     },
     options: {
@@ -208,12 +232,51 @@ new Chart(document.getElementById('revenueChart').getContext('2d'), {
     }
 });
 
-// Donut chart
+// Toggling logic for Revenue/Volume chart
+const revBtn = document.getElementById('btn-revenue');
+const volBtn = document.getElementById('btn-volume');
+
+function updateChart(type) {
+    const info = chartData[type];
+    revenueChart.data.datasets[0].data = info.target;
+    revenueChart.data.datasets[0].label = info.targetLabel;
+    revenueChart.data.datasets[1].data = info.data;
+    revenueChart.data.datasets[1].label = info.label;
+    
+    revenueChart.data.datasets[1].backgroundColor = (ctx) => ctx.dataIndex === 11 ? '#F0C419' : 'rgba(240,196,25,0.2)';
+    revenueChart.update();
+    
+    if (type === 'revenue') {
+        revBtn.style.background = '#1B2337';
+        revBtn.style.color = '#fff';
+        volBtn.style.background = 'transparent';
+        volBtn.style.color = '#64748B';
+        volBtn.classList.add('border', 'border-slate-200');
+        revBtn.classList.remove('border', 'border-slate-200');
+    } else {
+        volBtn.style.background = '#1B2337';
+        volBtn.style.color = '#fff';
+        revBtn.style.background = 'transparent';
+        revBtn.style.color = '#64748B';
+        revBtn.classList.add('border', 'border-slate-200');
+        volBtn.classList.remove('border', 'border-slate-200');
+    }
+}
+
+revBtn.addEventListener('click', () => updateChart('revenue'));
+volBtn.addEventListener('click', () => updateChart('volume'));
+
+// Donut chart for Service Type Distribution
 new Chart(document.getElementById('donutChart').getContext('2d'), {
     type: 'doughnut',
     data: {
-        labels: ['Premium Full Wash','Standard Exterior','Home Detailing','LS Priority','Lainnya'],
-        datasets: [{ data: [40,33,16,5,6], backgroundColor: ['#1B2337','#F0C419','#3B82F6','#10B981','#94A3B8'], borderWidth: 0, hoverOffset: 4 }]
+        labels: {!! json_encode(array_column($serviceDistribution, 'label')) !!},
+        datasets: [{ 
+            data: {!! json_encode(array_column($serviceDistribution, 'pct_val')) !!}, 
+            backgroundColor: {!! json_encode(array_column($serviceDistribution, 'color')) !!}, 
+            borderWidth: 0, 
+            hoverOffset: 4 
+        }]
     },
     options: {
         responsive: true, maintainAspectRatio: false, cutout: '70%',
@@ -225,10 +288,10 @@ new Chart(document.getElementById('donutChart').getContext('2d'), {
 new Chart(document.getElementById('outletChart').getContext('2d'), {
     type: 'bar',
     data: {
-        labels: ['Outlet Pusat','Outlet Bekasi','Outlet Tangerang','Outlet Depok','Outlet Bogor'],
+        labels: {!! json_encode(array_column($outletPerformance, 'name')) !!},
         datasets: [
-            { label: 'Pendapatan (jt)', data: [18.5, 12.3, 9.8, 7.2, 5.1], backgroundColor: '#F0C419', borderRadius: 5 },
-            { label: 'Order', data: [420, 310, 248, 186, 130], backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 5 }
+            { label: 'Pendapatan (jt)', data: {!! json_encode(array_column($outletPerformance, 'revenue_jt')) !!}, backgroundColor: '#F0C419', borderRadius: 5 },
+            { label: 'Order', data: {!! json_encode(array_column($outletPerformance, 'orders')) !!}, backgroundColor: 'rgba(59,130,246,0.7)', borderRadius: 5 }
         ]
     },
     options: {

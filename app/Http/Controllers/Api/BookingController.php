@@ -178,6 +178,20 @@ class BookingController extends Controller
             'paid_at' => now()
         ]);
 
+        \App\Models\PushNotification::notifyAdmin(
+            'new_booking',
+            'Booking Baru',
+            "Pemesanan baru {$booking->booking_code} telah dibuat.",
+            ['booking_id' => $booking->id]
+        );
+
+        \App\Models\PushNotification::notifyAdmin(
+            'payment_received',
+            'Pembayaran Diterima',
+            "Pembayaran sebesar Rp " . number_format($booking->total_amount, 0, ',', '.') . " diterima untuk pemesanan {$booking->booking_code}.",
+            ['booking_id' => $booking->id]
+        );
+
         if ($promo) {
             \App\Models\PromoUsage::create([
                 'promo_id' => $promo->id,
@@ -235,6 +249,13 @@ class BookingController extends Controller
                 'cancelled_reason' => $request->reason
             ]);
 
+            \App\Models\PushNotification::notifyAdmin(
+                'booking_cancelled',
+                'Booking Dibatalkan',
+                "Pemesanan {$booking->booking_code} telah dibatalkan oleh pelanggan.",
+                ['booking_id' => $booking->id]
+            );
+
             if ($booking->outlet_slot_id) {
                 $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
                 if ($slot && $slot->booked_count > 0) {
@@ -274,6 +295,15 @@ class BookingController extends Controller
             'rating' => $validated['rating'],
             'comment' => $validated['comment'] ?? null
         ]);
+
+        if ($review->rating < 3) {
+            \App\Models\PushNotification::notifyAdmin(
+                'bad_rating',
+                'Rating Buruk',
+                "Rating buruk ({$review->rating} bintang) diterima dari pelanggan {$customer->name} untuk pemesanan {$booking->booking_code}.",
+                ['booking_id' => $booking->id, 'review_id' => $review->id]
+            );
+        }
         
         if ($booking->technician) {
             $booking->technician->updateRating();

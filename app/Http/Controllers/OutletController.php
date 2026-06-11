@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Outlet;
+use App\Models\WashSlot;
 use Illuminate\Http\Request;
 
 class OutletController extends Controller
@@ -15,13 +16,38 @@ class OutletController extends Controller
                 $query->whereDate('scheduled_at', today());
             }
         ])->get();
+
+        $today = today()->toDateString();
+        
+        // Calculate available slots across all active outlets today
+        $availableSlots = WashSlot::whereDate('slot_date', $today)
+            ->where('status', 'available')
+            ->whereHas('outlet', function ($q) {
+                $q->where('status', 'active');
+            })
+            ->get()
+            ->sum(function ($slot) {
+                return max(0, $slot->capacity - $slot->booked_count);
+            });
+
+        // Calculate average slot utilization across active outlets
+        $totalBooked = WashSlot::whereHas('outlet', function ($q) {
+            $q->where('status', 'active');
+        })->sum('booked_count');
+
+        $totalCapacity = WashSlot::whereHas('outlet', function ($q) {
+            $q->where('status', 'active');
+        })->sum('capacity');
+
+        $utilization = $totalCapacity > 0 ? round(($totalBooked / $totalCapacity) * 100) : 0;
+
         $stats = [
             'total'           => Outlet::count(),
-            'active'          => Outlet::where('status','active')->count(),
-            'available_slots' => 42,
-            'utilization'     => '68%',
+            'active'          => Outlet::where('status', 'active')->count(),
+            'available_slots' => $availableSlots,
+            'utilization'     => $utilization . '%',
         ];
-        return view('outlets.index', compact('outlets','stats'));
+        return view('outlets.index', compact('outlets', 'stats'));
     }
 
     public function store(Request $request)

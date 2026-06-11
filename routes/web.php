@@ -11,6 +11,8 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\OutletController;
+use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\NotificationController;
 
 /*
 |──────────────────────────────────────────────────────
@@ -45,11 +47,10 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/',            [BookingController::class, 'store'])->name('store');
         Route::get('/export',       [BookingController::class, 'export'])->name('export');
         Route::get('/{booking}',    [BookingController::class, 'show'])->name('show');
-        Route::get('/{booking}/edit', [BookingController::class, 'edit'])->name('edit');
-        Route::put('/{booking}',    [BookingController::class, 'update'])->name('update');
         Route::delete('/{booking}', [BookingController::class, 'destroy'])->name('destroy');
         Route::patch('/{booking}/confirm', [BookingController::class, 'confirm'])->name('confirm');
         Route::patch('/{booking}/cancel',  [BookingController::class, 'cancel'])->name('cancel');
+        Route::patch('/{booking}/complete', [BookingController::class, 'complete'])->name('complete');
         Route::post('/{booking}/assign',   [BookingController::class, 'assign'])->name('assign');
     });
 
@@ -94,9 +95,10 @@ Route::middleware(['auth'])->group(function () {
     Route::prefix('payments')->name('payments.')->group(function () {
         Route::get('/',             [PaymentController::class, 'index'])->name('index');
         Route::get('/export',       [PaymentController::class, 'export'])->name('export');
+        Route::post('/process-payouts', [PaymentController::class, 'processPayouts'])->name('processPayouts');
         Route::get('/{payment}',    [PaymentController::class, 'show'])->name('show');
-        Route::post('/{payment}/refund',  [PaymentController::class, 'refund'])->name('refund');
-        Route::post('/{payment}/confirm', [PaymentController::class, 'confirm'])->name('confirm');
+        Route::patch('/{payment}/refund',  [PaymentController::class, 'refund'])->name('refund');
+        Route::patch('/{payment}/confirm', [PaymentController::class, 'confirm'])->name('confirm');
     });
 
     /* ── Reports ── */
@@ -113,8 +115,17 @@ Route::middleware(['auth'])->group(function () {
         Route::patch('/{customer}/toggle-status', [CustomerController::class, 'toggleStatus'])->name('toggleStatus');
     });
 
-    /* ── Settings (placeholder) ── */
-    Route::get('/settings', fn() => view('settings.index'))->name('settings');
+    /* ── Settings ── */
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings');
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile']);
+    Route::put('/settings/password', [SettingsController::class, 'updatePassword']);
+    Route::put('/settings/notifications', [SettingsController::class, 'updateNotifications']);
+
+    /* ── Notifications ── */
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('/notifications/unread', [NotificationController::class, 'unread'])->name('notifications.unread');
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])->name('notifications.read-all');
 });
 
 /*

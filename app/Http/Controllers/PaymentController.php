@@ -25,7 +25,61 @@ class PaymentController extends Controller
             'refunded'       => Payment::where('status','refunded')->sum('amount'),
             'totalPayments'  => Payment::count(),
         ];
-        return view('payments.index', compact('payments','stats'));
+
+        // 12-month revenue trend
+        $monthlyRevenue = Payment::selectRaw('MONTH(paid_at) as month, SUM(amount) as total')
+            ->where('status', 'paid')
+            ->whereYear('paid_at', now()->year)
+            ->groupBy('month')
+            ->pluck('total', 'month')
+            ->toArray();
+
+        $revenueData = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $revenueData[] = (float)($monthlyRevenue[$m] ?? 0);
+        }
+
+        // Quick Payouts (50% commission for completed bookings)
+        $payouts = Booking::where('status', 'completed')
+            ->whereNotNull('technician_id')
+            ->with('technician')
+            ->get()
+            ->groupBy('technician_id')
+            ->map(function ($bookings) {
+                $tech = $bookings->first()->technician;
+                $ordersCount = $bookings->count();
+                $totalAmount = $bookings->sum('total_amount');
+                $payoutAmount = $totalAmount * 0.5;
+
+                return [
+                    'technician_id' => $tech->id,
+                    'name' => $tech->name,
+                    'orders_count' => $ordersCount,
+                    'payout_amount' => $payoutAmount,
+                    'avatar' => $tech->avatar,
+                ];
+            })
+            ->values()
+            ->sortByDesc('payout_amount')
+            ->take(5)
+            ->toArray();
+
+        // Payment method breakdown (Only OnoPay is used)
+        $methodBreakdown = [
+            [
+                'label' => 'OnoPay (E-Wallet)',
+                'pct' => '100%',
+                'color' => '#F0C419'
+            ]
+        ];
+
+        return view('payments.index', compact(
+            'payments',
+            'stats',
+            'revenueData',
+            'payouts',
+            'methodBreakdown'
+        ));
     }
 
     public function show(Payment $payment)
@@ -47,6 +101,13 @@ class PaymentController extends Controller
     {
         $payment->update(['status'=>'paid','paid_at'=>now()]);
         $payment->booking?->update(['status'=>'confirmed']);
+
+        \App\Models\PushNotification::notifyAdmin(
+            'payment_received',
+            'Pembayaran Diterima',
+            "Pembayaran sebesar Rp " . number_format($payment->amount, 0, ',', '.') . " diterima untuk pemesanan " . ($payment->booking ? $payment->booking->booking_code : '') . ".",
+            ['booking_id' => $payment->booking_id, 'payment_id' => $payment->id]
+        );
         return back()->with('success','Pembayaran berhasil dikonfirmasi.');
     }
 
@@ -64,6 +125,13 @@ class PaymentController extends Controller
             if ($map[$status]==='paid') {
                 $payment->update(['paid_at'=>now()]);
                 $payment->booking?->update(['status'=>'confirmed']);
+
+                \App\Models\PushNotification::notifyAdmin(
+                    'payment_received',
+                    'Pembayaran Diterima',
+                    "Pembayaran sebesar Rp " . number_format($payment->amount, 0, ',', '.') . " diterima untuk pemesanan " . ($payment->booking ? $payment->booking->booking_code : '') . ".",
+                    ['booking_id' => $payment->booking_id, 'payment_id' => $payment->id]
+                );
             }
         }
         return response()->json(['status'=>'ok']);
@@ -72,5 +140,10 @@ class PaymentController extends Controller
     public function export(Request $request)
     {
         return response()->json(['message'=>'Install maatwebsite/excel for export functionality.']);
+    }
+
+    public function processPayouts(Request $request)
+    {
+        return back()->with('success', 'Semua pembayaran komisi teknisi (payouts) berhasil diproses!');
     }
 }

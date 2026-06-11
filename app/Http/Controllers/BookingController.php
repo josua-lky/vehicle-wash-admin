@@ -43,13 +43,50 @@ class BookingController extends Controller
             'cancelled'   => Booking::where('status', 'cancelled')->count(),
         ];
 
-        return view('bookings.index', compact('bookings', 'stats'));
+        // 7-day booking trends
+        $trendLabels = [];
+        $trendData = [];
+        $dayLabelsMap = [
+            0 => 'Min',
+            1 => 'Sen',
+            2 => 'Sel',
+            3 => 'Rab',
+            4 => 'Kam',
+            5 => 'Jum',
+            6 => 'Sab'
+        ];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i);
+            $dayOfWeek = $date->dayOfWeek;
+            $trendLabels[] = $dayLabelsMap[$dayOfWeek];
+            $trendData[] = Booking::whereDate('scheduled_at', $date->toDateString())->count();
+        }
+
+        // Service type breakdown
+        $homeCount = Booking::where('service_type', 'home')->count();
+        $outletCount = Booking::where('service_type', 'outlet')->count();
+        $totalServices = $homeCount + $outletCount;
+        $homePct = $totalServices > 0 ? round(($homeCount / $totalServices) * 100) : 0;
+        $outletPct = $totalServices > 0 ? round(($outletCount / $totalServices) * 100) : 0;
+
+        return view('bookings.index', compact(
+            'bookings',
+            'stats',
+            'trendLabels',
+            'trendData',
+            'homeCount',
+            'outletCount',
+            'homePct',
+            'outletPct'
+        ));
     }
 
     public function show(Booking $booking)
     {
         $booking->load(['customer', 'technician', 'package', 'payment', 'outlet']);
-        return view('bookings.show', compact('booking'));
+        $technicians = Technician::where('status', 'active')->get();
+        return view('bookings.show', compact('booking', 'technicians'));
     }
 
     public function create()
@@ -92,6 +129,13 @@ class BookingController extends Controller
 
         $booking = Booking::create($data);
 
+        \App\Models\PushNotification::notifyAdmin(
+            'new_booking',
+            'Booking Baru',
+            "Pemesanan baru {$booking->booking_code} telah dibuat.",
+            ['booking_id' => $booking->id]
+        );
+
         if ($booking->outlet_slot_id) {
             $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
             if ($slot) {
@@ -108,20 +152,16 @@ class BookingController extends Controller
             ->with('success', "Booking {$booking->booking_code} berhasil dibuat.");
     }
 
-    public function edit(Booking $booking)
+    public function complete(Booking $booking)
     {
-        $technicians = Technician::where('status', 'active')->get();
-        return view('bookings.edit', compact('booking', 'technicians'));
-    }
-
-    public function update(Request $request, Booking $booking)
-    {
-        $data = $request->validate([
-            'status'        => 'required|in:pending,confirmed,completed,cancelled',
-            'notes'         => 'nullable|string|max:500',
-        ]);
-        $booking->update($data);
-        return back()->with('success', 'Booking berhasil diperbarui.');
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return redirect('/bookings')->with('error', 'Tidak dapat mengubah pesanan yang sudah selesai atau dibatalkan.');
+        }
+        if ($booking->status === 'pending') {
+            return redirect('/bookings')->with('error', 'Pesanan harus dikonfirmasi terlebih dahulu sebelum diselesaikan.');
+        }
+        $booking->update(['status' => 'completed']);
+        return back()->with('success', "Booking {$booking->booking_code} berhasil diselesaikan.");
     }
 
     public function destroy(Booking $booking)
@@ -138,14 +178,26 @@ class BookingController extends Controller
 
     public function confirm(Booking $booking)
     {
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return redirect('/bookings')->with('error', 'Tidak dapat mengubah pesanan yang sudah selesai atau dibatalkan.');
+        }
         $booking->update(['status' => 'confirmed']);
         return back()->with('success', "Booking {$booking->booking_code} dikonfirmasi.");
     }
 
     public function cancel(Request $request, Booking $booking)
     {
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return redirect('/bookings')->with('error', 'Tidak dapat mengubah pesanan yang sudah selesai atau dibatalkan.');
+        }
         if ($booking->status !== 'cancelled') {
             $booking->update(['status' => 'cancelled', 'cancelled_reason' => $request->reason]);
+            \App\Models\PushNotification::notifyAdmin(
+                'booking_cancelled',
+                'Booking Dibatalkan',
+                "Pemesanan {$booking->booking_code} telah dibatalkan.",
+                ['booking_id' => $booking->id]
+            );
             if ($booking->outlet_slot_id) {
                 $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
                 if ($slot && $slot->booked_count > 0) {
@@ -158,6 +210,9 @@ class BookingController extends Controller
 
     public function assign(Request $request, Booking $booking)
     {
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return redirect('/bookings')->with('error', 'Tidak dapat mengubah pesanan yang sudah selesai atau dibatalkan.');
+        }
         $request->validate(['technician_id' => 'required|exists:technicians,id']);
         $booking->update(['technician_id' => $request->technician_id, 'status' => 'assigned']);
         return back()->with('success', 'Teknisi berhasil ditugaskan.');

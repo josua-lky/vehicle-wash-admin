@@ -192,14 +192,18 @@
                                         </button>
                                     </form>
                                     @endif
-                                    @if(!in_array($bStatus,['completed','cancelled']))
-                                    <form method="POST" action="/bookings/{{ $bId }}/cancel" class="inline"
-                                          onsubmit="return confirm('Batalkan booking ini?')">
+                                    @if(!in_array($bStatus,['completed','cancelled','pending']))
+                                    <form method="POST" action="/bookings/{{ $bId }}/complete" class="inline">
                                         @csrf @method('PATCH')
-                                        <button type="submit" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600" title="Batalkan">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                        <button type="submit" class="p-1.5 rounded-lg hover:bg-emerald-50 text-emerald-500" title="Selesaikan">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         </button>
                                     </form>
+                                    @endif
+                                    @if(!in_array($bStatus,['completed','cancelled']))
+                                    <button type="button" @click="openCancel('{{ $bId }}', '{{ $bCode }}')" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400 hover:text-red-600" title="Batalkan">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
                                     @endif
                                 </div>
                             </td>
@@ -233,7 +237,7 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <h3 class="font-semibold text-slate-800 mb-1 text-sm">Fleet Booking Trends</h3>
                 <p class="text-xs text-slate-400 mb-4">Tren 7 hari terakhir</p>
-                <canvas id="trendChart" height="150"></canvas>
+                <canvas id="trendChart" data-labels="{{ json_encode($trendLabels ?? []) }}" data-data="{{ json_encode($trendData ?? []) }}" height="150"></canvas>
             </div>
 
             {{-- Need Assistance --}}
@@ -252,17 +256,20 @@
             </div>
 
             {{-- Booking type breakdown --}}
-            <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
+            <div id="breakdown-container" class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <h3 class="font-semibold text-slate-800 mb-4 text-sm">Breakdown Layanan</h3>
                 <div class="space-y-3">
                     @php
-                    $types = [['Home Service','65%','#F0C419'],['Outlet','35%','#3B82F6']];
+                    $types = [
+                        ['Home Service', ($homePct ?? 0) . '%', '#F0C419', ($homeCount ?? 0)],
+                        ['Outlet', ($outletPct ?? 0) . '%', '#3B82F6', ($outletCount ?? 0)]
+                    ];
                     @endphp
-                    @foreach($types as [$label,$pct,$color])
+                    @foreach($types as [$label,$pct,$color,$count])
                     <div>
                         <div class="flex justify-between text-xs mb-1.5">
                             <span class="text-slate-600">{{ $label }}</span>
-                            <span class="font-semibold text-slate-800">{{ $pct }}</span>
+                            <span class="font-semibold text-slate-800">{{ $pct }} <span class="text-slate-400 font-normal">({{ $count }} booking)</span></span>
                         </div>
                         <div class="h-2 bg-slate-100 rounded-full">
                             <div class="h-full rounded-full" style="width:{{ $pct }}; background:{{ $color }};"></div>
@@ -293,6 +300,40 @@
             </div>
         </div>
     </div>
+
+    {{-- ══ CANCEL CONFIRMATION MODAL ══ --}}
+    <div x-show="showCancel" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4"
+         @click.self="showCancel=false">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" @click.stop>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800">Batalkan Booking</h3>
+                <button @click="showCancel=false" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form :action="'/bookings/'+cancelId+'/cancel'" method="POST" class="p-6 space-y-4">
+                @csrf @method('PATCH')
+                <div class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-800">Apakah Anda yakin ingin membatalkan pesanan ini?</p>
+                    <p class="text-xs text-slate-400">Pesanan dengan kode <span x-text="cancelCode" class="font-mono font-bold text-slate-600"></span> akan dibatalkan secara permanen.</p>
+                </div>
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Alasan Pembatalan</label>
+                    <textarea name="reason" required x-model="cancelReason" rows="3" placeholder="Masukkan alasan pembatalan (misal: Pelanggan meminta refund, salah jadwal, dll)..." class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700 resize-none focus:bg-white"></textarea>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" @click="showCancel=false" class="flex-1 px-4 py-2.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="flex-1 px-6 py-2.5 text-sm font-semibold rounded-xl text-white bg-red-500 hover:bg-red-600 shadow-sm">Ya, Batalkan</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -301,7 +342,9 @@
 function bookingPage() {
     return {
         showDetail: false, selectedId: '', selectedCode: '',
+        showCancel: false, cancelId: '', cancelCode: '', cancelReason: '',
         openDetail(id, code) { this.selectedId = id; this.selectedCode = code; this.showDetail = true; },
+        openCancel(id, code) { this.cancelId = id; this.cancelCode = code; this.showCancel = true; this.cancelReason = ''; },
         init() {
             setInterval(async () => {
                 try {
@@ -325,6 +368,23 @@ function bookingPage() {
                     if (newTable && oldTable) {
                         oldTable.innerHTML = newTable.innerHTML;
                     }
+
+                    // Replace breakdown container
+                    const newBreakdown = doc.getElementById('breakdown-container');
+                    const oldBreakdown = document.getElementById('breakdown-container');
+                    if (newBreakdown && oldBreakdown) {
+                        oldBreakdown.innerHTML = newBreakdown.innerHTML;
+                    }
+
+                    // Update trend chart data
+                    const newCanvas = doc.getElementById('trendChart');
+                    if (newCanvas && window.trendChart) {
+                        const newLabels = JSON.parse(newCanvas.getAttribute('data-labels'));
+                        const newData = JSON.parse(newCanvas.getAttribute('data-data'));
+                        window.trendChart.data.labels = newLabels;
+                        window.trendChart.data.datasets[0].data = newData;
+                        window.trendChart.update();
+                    }
                 } catch (err) {
                     console.error('Error polling bookings:', err);
                 }
@@ -332,13 +392,17 @@ function bookingPage() {
         }
     }
 }
-const trendCtx = document.getElementById('trendChart').getContext('2d');
-new Chart(trendCtx, {
+const canvasEl = document.getElementById('trendChart');
+const trendLabels = JSON.parse(canvasEl.getAttribute('data-labels'));
+const trendData = JSON.parse(canvasEl.getAttribute('data-data'));
+
+const trendCtx = canvasEl.getContext('2d');
+window.trendChart = new Chart(trendCtx, {
     type: 'line',
     data: {
-        labels: ['Sen','Sel','Rab','Kam','Jum','Sab','Min'],
+        labels: trendLabels,
         datasets: [{
-            data: [18,24,19,28,32,41,38],
+            data: trendData,
             borderColor: '#F0C419', backgroundColor: 'rgba(240,196,25,0.08)',
             borderWidth: 2.5, tension: 0.4, fill: true,
             pointBackgroundColor: '#F0C419', pointRadius: 4, pointHoverRadius: 6,
@@ -346,7 +410,11 @@ new Chart(trendCtx, {
     },
     options: {
         responsive: true, maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
+        plugins: { legend: { display: false }, tooltip: {
+            backgroundColor: '#1B2337', titleColor: '#fff', bodyColor: '#94A3B8',
+            padding: 10, cornerRadius: 8,
+            callbacks: { label: (c) => ` ${c.parsed.y} booking` }
+        }},
         scales: {
             y: { grid: { color: 'rgba(0,0,0,0.04)' }, border: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } },
             x: { grid: { display: false }, border: { display: false }, ticks: { color: '#94A3B8', font: { size: 10 } } }

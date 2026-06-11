@@ -18,9 +18,14 @@
                 </button>
             </form>
             @endif
-            <a href="/bookings/{{ $booking->id }}/edit" class="flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-700 bg-white hover:bg-slate-50">
-                Edit Booking
-            </a>
+            @if(!in_array($booking->status, ['completed', 'cancelled', 'pending']))
+            <form method="POST" action="/bookings/{{ $booking->id }}/complete" class="inline">
+                @csrf @method('PATCH')
+                <button type="submit" class="text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:#10B981;">
+                    Selesaikan Booking
+                </button>
+            </form>
+            @endif
         </div>
     </div>
 
@@ -41,6 +46,16 @@
                 </div>
 
                 <hr class="border-slate-100">
+
+                @if($booking->status === 'cancelled')
+                <div class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-800 space-y-1">
+                    <p class="font-bold flex items-center gap-1.5">
+                        <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Pesanan ini telah dibatalkan
+                    </p>
+                    <p class="text-xs text-red-600">Alasan pembatalan: <span class="font-medium text-red-800">{{ $booking->cancelled_reason ?: 'Tidak ada alasan khusus yang diisi.' }}</span></p>
+                </div>
+                @endif
 
                 <div class="grid grid-cols-2 gap-4 text-sm">
                     <div>
@@ -153,21 +168,40 @@
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100 space-y-3">
                 <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Teknisi Ditugaskan</h4>
                 @if($booking->technician)
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
                     <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                          style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
-                        {{ strtoupper(substr($booking->technician->name, 0, 1)) }}
+                         {{ strtoupper(substr($booking->technician->name, 0, 1)) }}
                     </div>
                     <div>
                         <p class="font-semibold text-slate-800 text-sm">{{ $booking->technician->name }}</p>
                         <p class="text-xs text-slate-400">{{ $booking->technician->phone }}</p>
                     </div>
                 </div>
-                @else
-                <div class="text-sm text-slate-500 py-1">
-                    <p class="mb-2">Belum ada teknisi ditugaskan.</p>
-                    <a href="/bookings/{{ $booking->id }}/edit" class="text-xs font-semibold text-blue-500 hover:text-blue-700">Tugaskan Sekarang →</a>
-                </div>
+                @endif
+
+                @if(!in_array($booking->status, ['completed', 'cancelled']))
+                <form method="POST" action="/bookings/{{ $booking->id }}/assign" class="space-y-2.5 pt-1">
+                    @csrf
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                            {{ $booking->technician ? 'Ganti Teknisi' : 'Tugaskan Teknisi' }}
+                        </label>
+                        <select name="technician_id" required class="w-full px-3 py-2 text-xs border border-slate-200 rounded-xl bg-slate-50 text-slate-700 focus:bg-white focus:ring-1 focus:ring-slate-300 outline-none">
+                            <option value="">-- Pilih Teknisi --</option>
+                            @foreach($technicians as $tech)
+                            <option value="{{ $tech->id }}" {{ $booking->technician_id == $tech->id ? 'selected' : '' }}>
+                                {{ $tech->name }}
+                            </option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full py-2 text-xs font-semibold rounded-xl text-slate-900 transition-all active:scale-[0.98] shadow-sm hover:brightness-105" style="background:#F0C419;">
+                        Simpan Penugasan
+                    </button>
+                </form>
+                @elseif(!$booking->technician)
+                <p class="text-xs text-slate-400 italic">Belum ada teknisi ditugaskan.</p>
                 @endif
             </div>
 
