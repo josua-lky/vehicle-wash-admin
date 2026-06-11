@@ -160,12 +160,9 @@
                                        class="p-1.5 rounded-lg hover:bg-blue-50 text-blue-400">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
                                     </a>
-                                    <form method="POST" action="/technicians/{{ $tId }}" onsubmit="return confirm('Hapus teknisi ini?')">
-                                        @csrf @method('DELETE')
-                                        <button type="submit" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                        </button>
-                                    </form>
+                                    <button type="button" @click="confirmDelete('{{ $tId }}', '{{ addslashes($tName) }}')" class="p-1.5 rounded-lg hover:bg-red-50 text-red-400">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -360,6 +357,35 @@
             </form>
         </div>
     </div>
+
+    {{-- DELETE CONFIRMATION MODAL --}}
+    <div x-show="showDeleteModal" x-cloak
+         class="fixed inset-0 z-50 flex items-center justify-center modal-overlay p-4"
+         @click.self="showDeleteModal=false">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden" @click.stop>
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+                <h3 class="font-bold text-slate-800">Hapus Teknisi</h3>
+                <button @click="showDeleteModal=false" class="p-2 rounded-lg hover:bg-slate-100 text-slate-400">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+            <form :action="'/technicians/'+deleteId" method="POST" class="p-6 space-y-4">
+                @csrf @method('DELETE')
+                <div class="text-center space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    </div>
+                    <p class="text-sm font-semibold text-slate-800">Apakah Anda yakin ingin menghapus teknisi ini?</p>
+                    <p class="text-xs text-slate-400">Teknisi dengan nama <span x-text="deleteName" class="font-bold text-slate-600"></span> akan dihapus secara permanen dari sistem.</p>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <button type="button" @click="showDeleteModal=false" class="flex-1 px-4 py-2.5 text-sm font-medium border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50">Batal</button>
+                    <button type="submit" class="flex-1 px-6 py-2.5 text-sm font-semibold rounded-xl text-white bg-red-500 hover:bg-red-600 shadow-sm">Ya, Hapus</button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -369,7 +395,15 @@ function techPage() {
     return {
         selected: null,
         showAddModal: false,
-        selectTech(tech) { this.selected = tech; }
+        showDeleteModal: false,
+        deleteId: '',
+        deleteName: '',
+        selectTech(tech) { this.selected = tech; },
+        confirmDelete(id, name) {
+            this.deleteId = id;
+            this.deleteName = name;
+            this.showDeleteModal = true;
+        }
     }
 }
 </script>

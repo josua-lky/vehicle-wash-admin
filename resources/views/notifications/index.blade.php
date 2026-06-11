@@ -2,18 +2,22 @@
 @section('title', 'Notifikasi Sistem')
 
 @section('content')
-<div class="p-6 space-y-5">
+@php
+    $hasUnread = \App\Models\PushNotification::whereNull('customer_id')->where('is_read', false)->exists();
+@endphp
+<div class="p-6 space-y-5" x-data="notificationPage()">
     <div class="flex items-center justify-between">
         <div>
             <h1 class="text-xl font-bold text-slate-800">Notifikasi Sistem</h1>
             <p class="text-sm text-slate-500 mt-0.5">Pantau aktivitas real-time Booking, Pembayaran, dan Ulasan</p>
         </div>
-        <form method="POST" action="/notifications/read-all">
-            @csrf
-            <button type="submit" class="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">
-                Tandai Semua Dibaca
-            </button>
-        </form>
+        <button type="button"
+                @click="markAllAsRead()"
+                x-show="hasUnread"
+                class="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                x-cloak>
+            Tandai Semua Dibaca
+        </button>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
@@ -31,12 +35,11 @@
             </div>
 
             @if(!$n->is_read)
-            <form method="POST" action="/notifications/{{ $n->id }}/read">
-                @csrf @method('PATCH')
-                <button type="submit" class="text-xs text-blue-600 hover:underline font-medium flex-shrink-0">
-                    Tandai dibaca
-                </button>
-            </form>
+            <button type="button"
+                    @click="markAsRead('{{ $n->id }}')"
+                    class="text-xs text-blue-600 hover:underline font-medium flex-shrink-0">
+                Tandai dibaca
+            </button>
             @else
             <span class="text-xs text-slate-400 flex-shrink-0">Sudah dibaca</span>
             @endif
@@ -58,3 +61,47 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+function notificationPage() {
+    return {
+        hasUnread: {{ $hasUnread ? 'true' : 'false' }},
+        async markAsRead(id) {
+            try {
+                const response = await fetch(`/notifications/${id}/read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async markAllAsRead() {
+            try {
+                const response = await fetch('/notifications/read-all', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+}
+</script>
+@endpush
