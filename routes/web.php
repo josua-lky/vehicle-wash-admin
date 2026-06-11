@@ -13,6 +13,7 @@ use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\OutletController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\PackageController;
 
 /*
 |──────────────────────────────────────────────────────
@@ -80,6 +81,15 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/',            [WashSlotController::class, 'store'])->name('store');
         Route::delete('/{washSlot}',[WashSlotController::class, 'destroy'])->name('destroy');
         Route::get('/available',    [WashSlotController::class, 'available'])->name('available');
+    });
+
+    /* ── Service Packages ── */
+    Route::prefix('packages')->name('packages.')->group(function () {
+        Route::get('/',             [PackageController::class, 'index'])->name('index');
+        Route::post('/',            [PackageController::class, 'store'])->name('store');
+        Route::get('/{package}/edit', [PackageController::class, 'edit'])->name('edit');
+        Route::put('/{package}',    [PackageController::class, 'update'])->name('update');
+        Route::delete('/{package}', [PackageController::class, 'destroy'])->name('destroy');
     });
 
     /* ── Promos ── */
