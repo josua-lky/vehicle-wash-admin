@@ -29,6 +29,7 @@ class Booking extends Model
         'scheduled_at','status','promo_id',
         'subtotal','discount_amount','total_amount',
         'package_id','notes','cancelled_reason','completed_at',
+        'before_photo', 'after_photo',
     ];
 
     protected $casts = [

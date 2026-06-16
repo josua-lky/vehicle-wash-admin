@@ -113,19 +113,52 @@ class BookingController extends Controller
             'notes'         => 'nullable|string|max:500',
         ]);
 
-        if ($request->outlet_slot_id) {
-            $slot = \App\Models\WashSlot::find($request->outlet_slot_id);
-            if ($slot && $slot->booked_count >= $slot->capacity) {
-                return back()->withErrors(['outlet_slot_id' => 'Slot ini sudah penuh.'])->withInput();
+        $defaultAddress = \App\Models\UserAddress::where('customer_id', $data['customer_id'])
+            ->where('is_default', true)
+            ->first();
+        $data['latitude'] = $defaultAddress ? $defaultAddress->latitude : null;
+        $data['longitude'] = $defaultAddress ? $defaultAddress->longitude : null;
+
+        $outletId = $data['outlet_id'] ?? null;
+        $outletSlotId = $data['outlet_slot_id'] ?? null;
+
+        if ($data['service_type'] === 'outlet' && !empty($outletId)) {
+            if (empty($outletSlotId)) {
+                $slotDate = date('Y-m-d', strtotime($data['scheduled_at']));
+                $slotTime = date('H:i:00', strtotime($data['scheduled_at']));
+                
+                $slot = \App\Models\WashSlot::firstOrCreate(
+                    [
+                        'outlet_id' => $outletId,
+                        'slot_date' => $slotDate,
+                        'slot_time' => $slotTime,
+                    ],
+                    [
+                        'capacity' => \App\Models\Outlet::find($outletId)->capacity_per_hour ?? 3,
+                        'booked_count' => 0,
+                        'status' => 'available',
+                    ]
+                );
+                $outletSlotId = $slot->id;
+            } else {
+                $slot = \App\Models\WashSlot::find($outletSlotId);
+            }
+
+            if ($slot) {
+                if ($slot->booked_count >= $slot->capacity || $slot->status === 'blocked') {
+                    return back()->withErrors(['scheduled_at' => 'Slot waktu yang Anda pilih sudah penuh.'])->withInput();
+                }
+                $slot->increment('booked_count');
             }
         }
 
-        $package = Package::find($request->package_id);
+        $package = Package::find($data['package_id']);
         $data['booking_code']  = 'VW-' . date('Ymd') . '-' . strtoupper(substr(uniqid(), -4));
         $data['status']        = 'pending';
         $data['subtotal']      = $package->price;
         $data['discount_amount'] = 0;
         $data['total_amount']  = $package->price;
+        $data['outlet_slot_id'] = $outletSlotId;
 
         $booking = Booking::create($data);
 
@@ -135,13 +168,6 @@ class BookingController extends Controller
             "Pemesanan baru {$booking->booking_code} telah dibuat.",
             ['booking_id' => $booking->id]
         );
-
-        if ($booking->outlet_slot_id) {
-            $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
-            if ($slot) {
-                $slot->increment('booked_count');
-            }
-        }
 
         // If from Wash Slots page, redirect back with success instead of show page to make UI flow smooth
         if ($request->has('from_slots')) {

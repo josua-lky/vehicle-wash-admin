@@ -1,17 +1,23 @@
 <?php
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Notifications\Notifiable;
 
-class Technician extends Model
+class Technician extends Authenticatable
 {
-    use SoftDeletes;
+    use HasApiTokens, SoftDeletes, Notifiable;
 
     protected $fillable = [
-        'name','email','phone','profile_photo','specialization',
+        'name','email','password','phone','profile_photo','specialization',
         'area','outlet_id','status','rating','total_orders',
-        'join_date','notes','fcm_token',
+        'join_date','notes','fcm_token','latitude','longitude',
+    ];
+
+    protected $hidden = [
+        'password',
     ];
 
     protected $casts = ['rating'=>'float','join_date'=>'date','total_orders'=>'integer'];

@@ -153,4 +153,43 @@ class BookingOutletTest extends TestCase
         $slotAfterCancel = \App\Models\WashSlot::find($booking->outlet_slot_id);
         $this->assertEquals($initialBooked, $slotAfterCancel->booked_count);
     }
+
+    public function test_booking_creation_fails_when_slot_capacity_is_exceeded()
+    {
+        $customer = Customer::first();
+        $vehicle = Vehicle::where('customer_id', $customer->id)->first();
+        $package = Package::first();
+        $outlet = Outlet::first();
+        $scheduledAt = now()->addDays(2)->setTime(11, 0, 0);
+
+        // First, create or update a slot with capacity 1 and booked_count 1
+        $slot = \App\Models\WashSlot::updateOrCreate(
+            [
+                'outlet_id' => $outlet->id,
+                'slot_date' => $scheduledAt->toDateString(),
+                'slot_time' => '11:00:00',
+            ],
+            [
+                'capacity' => 1,
+                'booked_count' => 1,
+                'status' => 'available',
+            ]
+        );
+
+        $payload = [
+            'vehicle_id' => $vehicle->id,
+            'package_id' => $package->id,
+            'service_type' => 'outlet',
+            'scheduled_at' => $scheduledAt->format('Y-m-d H:i:s'),
+            'service_address' => $outlet->address,
+            'outlet_id' => $outlet->id,
+        ];
+
+        // Second booking attempt to the same slot should fail
+        $response = $this->actingAs($customer, 'sanctum')
+            ->postJson('/api/bookings', $payload);
+
+        $response->assertStatus(422);
+        $this->assertStringContainsString('penuh', $response->json('message'));
+    }
 }

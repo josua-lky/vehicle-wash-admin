@@ -32,8 +32,13 @@
                            class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email</label>
-                    <input type="email" name="email" value="{{ old('email', $technician->email) }}"
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email *</label>
+                    <input type="email" name="email" value="{{ old('email', $technician->email) }}" required
+                           class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Kata Sandi Baru (Kosongkan jika tidak diubah)</label>
+                    <input type="password" name="password" placeholder="******" minlength="6"
                            class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
                 </div>
                 <div>

@@ -321,8 +321,13 @@
                                class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email</label>
-                        <input type="email" name="email" placeholder="teknisi@email.com"
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Email *</label>
+                        <input type="email" name="email" required placeholder="teknisi@email.com"
+                               class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1.5 uppercase tracking-wide">Kata Sandi (Password) *</label>
+                        <input type="password" name="password" required placeholder="******" minlength="6"
                                class="w-full px-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-slate-50 text-slate-700">
                     </div>
                     <div>

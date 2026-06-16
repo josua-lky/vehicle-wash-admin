@@ -135,6 +135,7 @@ class TechnicianSeeder extends Seeder
                 'status'         => $t['status']      ?? 'active',
                 'rating'         => $t['rating'],     'total_orders'   => $t['total_orders'],
                 'join_date'      => $t['join_date'],  'created_at'     => now(), 'updated_at' => now(),
+                'password'       => bcrypt('password123'),
             ]);
         }
         $this->command->info('  ✔ Technicians: ' . count($technicians));
@@ -376,6 +377,10 @@ class BookingSeeder extends Seeder
             }
         }
 
-        $this->command->info('  ✔ Bookings: 30 | Payments: 30 | Wash Slots: generated');
+        foreach (\App\Models\Technician::all() as $tech) {
+            $tech->updateRating();
+        }
+
+        $this->command->info('  ✔ Bookings: 30 | Payments: 30 | Wash Slots: generated | Technician ratings synchronized');
     }
 }

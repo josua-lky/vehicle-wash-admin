@@ -169,7 +169,7 @@
                 <h3 class="text-sm font-semibold text-slate-800 mb-4">Kapasitas Hari Ini</h3>
                 @php
                 $totalCap = $todayStats['capacity'] ?? 0;
-                $booked = $todayBookings ? $todayBookings->count() : 0;
+                $booked = $todayStats['booked'] ?? 0;
                 $avail = max(0, $totalCap - $booked);
                 $pct = $totalCap > 0 ? round($booked / $totalCap * 100) : 0;
                 @endphp

@@ -16,8 +16,8 @@ class WashSlotController extends Controller
                          ->with('outlet')->orderBy('slot_date')->orderBy('slot_time')->get();
         $stats = [
             'total'            => $slots->count(),
-            'available_slots'  => $slots->where('status','available')->count(),
-            'booked'           => $slots->where('status','booked')->count(),
+            'available_slots'  => $slots->filter(fn($s) => $s->status === 'available' && $s->booked_count < $s->capacity)->count(),
+            'booked'           => $slots->filter(fn($s) => $s->status === 'available' && $s->booked_count > 0)->count(),
             'blocked'          => $slots->where('status','blocked')->count(),
         ];
 

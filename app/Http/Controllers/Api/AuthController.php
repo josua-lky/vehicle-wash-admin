@@ -137,8 +137,12 @@ public function login(Request $request)
 
     public function profile(Request $request)
     {
+        $user = $request->user();
+        if ($user instanceof \App\Models\Technician) {
+            $user->load('outlet');
+        }
         return response()->json([
-            'user' => $request->user()
+            'user' => $user
         ]);
     }
 

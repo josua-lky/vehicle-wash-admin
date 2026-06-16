@@ -5,9 +5,11 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\VehicleController;
 use App\Http\Controllers\Api\BookingController;
 use App\Http\Controllers\Api\PackageController;
+use App\Http\Controllers\Api\TechnicianAppController;
 
 Route::post('/register',[AuthController::class,'register']);
 Route::post('/login',[AuthController::class,'login']);
+Route::post('/technician/login',[TechnicianAppController::class,'login']);
 
 Route::get( '/packages', [PackageController::class, 'index'] );
 
@@ -58,7 +60,20 @@ Route::middleware('auth:sanctum')->group(function(){
 });
 
 
-Route::middleware('auth:sanctum') ->group(function () { Route::get( '/bookings', [BookingController::class, 'index'] ); Route::post( '/bookings', [BookingController::class, 'store'] ); Route::get( '/bookings/{id}', [BookingController::class, 'show'] ); Route::put( '/bookings/{id}/cancel', [BookingController::class, 'cancel'] ); Route::post( '/bookings/{id}/review', [BookingController::class, 'submitReview'] ); });
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/bookings', [BookingController::class, 'index']);
+    Route::post('/bookings', [BookingController::class, 'store']);
+    Route::get('/bookings/{id}', [BookingController::class, 'show']);
+    Route::put('/bookings/{id}/cancel', [BookingController::class, 'cancel']);
+    Route::post('/bookings/{id}/review', [BookingController::class, 'submitReview']);
+
+    // Technician App routes
+    Route::post('/technician/location', [TechnicianAppController::class, 'updateLocation']);
+    Route::get('/technician/bookings', [TechnicianAppController::class, 'bookings']);
+    Route::post('/technician/bookings/{id}/status', [TechnicianAppController::class, 'updateStatus']);
+    Route::get('/bookings/{id}/chat', [TechnicianAppController::class, 'getChatMessages']);
+    Route::post('/bookings/{id}/chat', [TechnicianAppController::class, 'sendChatMessage']);
+});
 
 use App\Models\Outlet;
 use App\Models\Technician;

@@ -43,13 +43,15 @@ class TechnicianController extends Controller
         $data = $request->validate([
             'name'           => 'required|string|max:100',
             'phone'          => 'required|string|max:20|unique:technicians',
-            'email'          => 'nullable|email|unique:technicians',
+            'email'          => 'required|email|unique:technicians',
+            'password'       => 'required|string|min:6',
             'specialization' => 'required|string|in:motor,mobil',
             'outlet_id'      => 'nullable|exists:outlets,id',
         ]);
         $data['area']   = null;
         $data['status'] = 'active';
         $data['rating'] = 0.0;
+        $data['password'] = bcrypt($data['password']);
         Technician::create($data);
         return back()->with('success', 'Teknisi berhasil ditambahkan.');
     }
@@ -71,12 +73,18 @@ class TechnicianController extends Controller
         $data = $request->validate([
             'name'           => 'required|string|max:100',
             'phone'          => "required|string|max:20|unique:technicians,phone,{$technician->id}",
-            'email'          => "nullable|email|unique:technicians,email,{$technician->id}",
+            'email'          => "required|email|unique:technicians,email,{$technician->id}",
+            'password'       => 'nullable|string|min:6',
             'specialization' => 'required|string|in:motor,mobil',
             'area'           => 'nullable|string|max:100',
             'outlet_id'      => 'nullable|exists:outlets,id',
             'status'         => 'required|in:active,inactive,cuti,busy',
         ]);
+        if (!empty($data['password'])) {
+            $data['password'] = bcrypt($data['password']);
+        } else {
+            unset($data['password']);
+        }
         $technician->update($data);
         return back()->with('success', 'Data teknisi berhasil diperbarui.');
     }

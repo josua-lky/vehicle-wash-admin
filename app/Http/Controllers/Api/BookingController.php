@@ -125,6 +125,12 @@ class BookingController extends Controller
             }
         }
 
+        $defaultAddress = \App\Models\UserAddress::where('customer_id', $customer->id)
+            ->where('is_default', true)
+            ->first();
+        $latitude = $defaultAddress ? $defaultAddress->latitude : null;
+        $longitude = $defaultAddress ? $defaultAddress->longitude : null;
+
         $outletSlotId = null;
         if (!empty($outletId)) {
             $slotDate = date('Y-m-d', strtotime($validated['scheduled_at']));
@@ -143,6 +149,10 @@ class BookingController extends Controller
                 ]
             );
             
+            if ($slot->booked_count >= $slot->capacity || $slot->status === 'blocked') {
+                return response()->json(['message' => 'Slot waktu yang Anda pilih sudah penuh.'], 422);
+            }
+            
             $slot->increment('booked_count');
             $outletSlotId = $slot->id;
         }
@@ -156,6 +166,8 @@ class BookingController extends Controller
             'package_id' => $package->id,
             'service_type' => $validated['service_type'],
             'service_address' => $validated['service_address'] ?? null,
+            'latitude' => $latitude,
+            'longitude' => $longitude,
             'scheduled_at' => $validated['scheduled_at'],
             'status' => 'pending',
             'promo_id' => $promo ? $promo->id : null,

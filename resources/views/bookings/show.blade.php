@@ -91,6 +91,30 @@
                 @endif
             </div>
 
+            @if($booking->before_photo || $booking->after_photo)
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
+                <h3 class="font-bold text-slate-800 text-sm">Foto Hasil Kerja Teknisi</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    @if($booking->before_photo)
+                    <div class="space-y-2">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sebelum Cuci (Before)</p>
+                        <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm max-w-md">
+                            <img src="{{ asset('storage/' . $booking->before_photo) }}" alt="Foto Sebelum" class="w-full h-48 object-cover">
+                        </div>
+                    </div>
+                    @endif
+                    @if($booking->after_photo)
+                    <div class="space-y-2">
+                        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sesudah Cuci (After)</p>
+                        <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm max-w-md">
+                            <img src="{{ asset('storage/' . $booking->after_photo) }}" alt="Foto Sesudah" class="w-full h-48 object-cover">
+                        </div>
+                    </div>
+                    @endif
+                </div>
+            </div>
+            @endif
+
             {{-- Billing Details --}}
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-4">
                 <h3 class="font-bold text-slate-800 text-sm">Rincian Pembayaran</h3>

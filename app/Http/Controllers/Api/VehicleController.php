@@ -28,7 +28,10 @@ class VehicleController extends Controller
         'brand' => 'required',
         'model' => 'required',
         'license_plate' => 'required',
-        'type' => 'required'
+        'type' => 'required|in:roda_2,roda_4',
+        'year' => 'nullable|integer|between:1901,2155',
+        'color' => 'nullable|string',
+        'notes' => 'nullable|string'
     ]);
 
     $vehicle = Vehicle::create([
@@ -39,9 +42,9 @@ class VehicleController extends Controller
         'license_plate' => strtoupper(
             $validated['license_plate']
         ),
-        'year' => $request->year,
-        'color' => $request->color,
-        'notes' => $request->notes
+        'year' => $validated['year'] ?? null,
+        'color' => $validated['color'] ?? null,
+        'notes' => $validated['notes'] ?? null
     ]);
 
     return response()->json([
@@ -63,16 +66,26 @@ public function update(
         ], 403);
     }
 
+    $validated = $request->validate([
+        'brand' => 'required',
+        'model' => 'required',
+        'license_plate' => 'required',
+        'type' => 'required|in:roda_2,roda_4',
+        'year' => 'nullable|integer|between:1901,2155',
+        'color' => 'nullable|string',
+        'notes' => 'nullable|string'
+    ]);
+
     $vehicle->update([
-        'type' => $request->type,
-        'brand' => $request->brand,
-        'model' => $request->model,
+        'type' => $validated['type'],
+        'brand' => $validated['brand'],
+        'model' => $validated['model'],
         'license_plate' => strtoupper(
-            $request->license_plate
+            $validated['license_plate']
         ),
-        'year' => $request->year,
-        'color' => $request->color,
-        'notes' => $request->notes
+        'year' => $validated['year'] ?? null,
+        'color' => $validated['color'] ?? null,
+        'notes' => $validated['notes'] ?? null
     ]);
 
     return response()->json([
