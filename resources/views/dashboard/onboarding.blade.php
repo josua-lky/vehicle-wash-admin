@@ -196,7 +196,7 @@
                         Download APK (Android)
                     </a>
                     <div class="flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
-                        <span>Ukuran File: 588 KB</span>
+                        <span>Ukuran File: 44.5 MB</span>
                         <span>•</span>
                         <span>Versi: 1.0.0</span>
                     </div>
