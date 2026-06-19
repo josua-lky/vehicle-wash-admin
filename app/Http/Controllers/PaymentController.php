@@ -139,7 +139,49 @@ class PaymentController extends Controller
 
     public function export(Request $request)
     {
-        return response()->json(['message'=>'Install maatwebsite/excel for export functionality.']);
+        $payments = Payment::with(['booking.customer'])
+            ->when($request->status, fn($q)=>$q->where('status',$request->status))
+            ->when($request->method, fn($q)=>$q->where('payment_method',$request->method))
+            ->when($request->search, fn($q)=>$q->where('id','like',"%{$request->search}%")
+                ->orWhereHas('booking.customer',fn($q2)=>$q2->where('name','like',"%{$request->search}%")))
+            ->when($request->date_from, fn($q)=>$q->whereDate('created_at','>=',$request->date_from))
+            ->when($request->date_to,   fn($q)=>$q->whereDate('created_at','<=',$request->date_to))
+            ->latest()->get();
+
+        $format = $request->get('format', 'excel');
+        
+        if ($format === 'pdf') {
+            return view('payments.print', compact('payments'));
+        }
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=payments-export.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($payments) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID Pembayaran', 'Kode Booking', 'Pelanggan', 'Jumlah (IDR)', 'Metode Pembayaran', 'Status', 'Tanggal']);
+
+            foreach ($payments as $payment) {
+                fputcsv($file, [
+                    $payment->id,
+                    $payment->booking->booking_code ?? '—',
+                    $payment->booking->customer->name ?? '—',
+                    $payment->amount,
+                    $payment->payment_method ?? '—',
+                    $payment->status,
+                    $payment->created_at ? $payment->created_at->format('Y-m-d H:i:s') : '—',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 
     public function processPayouts(Request $request)

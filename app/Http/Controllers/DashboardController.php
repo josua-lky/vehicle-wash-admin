@@ -9,10 +9,13 @@ use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $selectedYear = intval($request->get('year', now()->year));
+        $years = range(2023, max(now()->year, 2026));
+
         $monthlyBookings = Booking::selectRaw('MONTH(scheduled_at) as month, COUNT(*) as count')
-            ->whereYear('scheduled_at', now()->year)
+            ->whereYear('scheduled_at', $selectedYear)
             ->groupBy('month')
             ->pluck('count', 'month')
             ->toArray();
@@ -95,7 +98,7 @@ class DashboardController extends Controller
                 'time'     => optional($b->scheduled_at)->format('d M, H:i') ?? '—',
             ]);
 
-        return view('dashboard.index', compact('stats', 'recentBookings', 'monthlyData', 'weeklyData'));
+        return view('dashboard.index', compact('stats', 'recentBookings', 'monthlyData', 'weeklyData', 'selectedYear', 'years'));
     }
 
     public function search(Request $request)
@@ -123,9 +126,64 @@ class DashboardController extends Controller
         return view('dashboard.search', compact('q', 'bookings', 'technicians', 'customers'));
     }
 
+    public function landing()
+    {
+        return view('dashboard.onboarding', ['layout' => 'layouts.guest']);
+    }
+
     public function onboarding()
     {
-        return view('dashboard.onboarding');
+        return view('dashboard.onboarding', ['layout' => 'layouts.app']);
+    }
+
+    public function export(Request $request)
+    {
+        $year = intval($request->get('year', now()->year));
+        
+        $monthlyBookings = Booking::selectRaw('MONTH(scheduled_at) as month, COUNT(*) as count')
+            ->whereYear('scheduled_at', $year)
+            ->groupBy('month')
+            ->pluck('count', 'month')
+            ->toArray();
+            
+        $monthlyRevenue = Payment::selectRaw('MONTH(paid_at) as month, SUM(amount) as revenue')
+            ->where('status', 'paid')
+            ->whereYear('paid_at', $year)
+            ->groupBy('month')
+            ->pluck('revenue', 'month')
+            ->toArray();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=dashboard-summary-{$year}.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($year, $monthlyBookings, $monthlyRevenue) {
+            $file = fopen('php://output', 'w');
+            
+            fputcsv($file, ["Laporan Ringkasan Eksekutif Tahun {$year}"]);
+            fputcsv($file, []);
+            fputcsv($file, ['Bulan', 'Total Booking', 'Total Pendapatan (IDR)']);
+
+            $months = [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+            ];
+
+            foreach ($months as $num => $name) {
+                $bookingsCount = $monthlyBookings[$num] ?? 0;
+                $revenue = $monthlyRevenue[$num] ?? 0;
+                fputcsv($file, [$name, $bookingsCount, $revenue]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }
 

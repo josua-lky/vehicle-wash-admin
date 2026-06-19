@@ -62,6 +62,34 @@ class CustomerController extends Controller
 
     public function export()
     {
-        return response()->json(['message'=>'Install maatwebsite/excel for export.']);
+        $customers = Customer::latest()->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=customers-export.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($customers) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID Pelanggan', 'Nama', 'Email', 'No Telepon', 'Status', 'Tanggal Bergabung']);
+
+            foreach ($customers as $customer) {
+                fputcsv($file, [
+                    $customer->id,
+                    $customer->name,
+                    $customer->email ?? '—',
+                    $customer->phone ?? '—',
+                    $customer->status,
+                    $customer->created_at ? $customer->created_at->format('Y-m-d H:i:s') : '—',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

@@ -346,12 +346,116 @@ class ReportController extends Controller
 
     public function export(Request $request)
     {
-        $format = $request->get('format','pdf');
-        if ($format === 'pdf') {
-            // barryvdh/laravel-dompdf
-            return response()->json(['message'=>'Install barryvdh/laravel-dompdf: composer require barryvdh/laravel-dompdf']);
+        $from     = $request->date_from ?? now()->startOfMonth()->toDateString();
+        $to       = $request->date_to   ?? now()->toDateString();
+        $outletId = $request->outlet_id;
+        $format   = $request->get('format', 'pdf');
+
+        $completedDateFilter = function($query, $dateFrom, $dateTo) {
+            return $query->where(function($q) use ($dateFrom, $dateTo) {
+                $q->whereBetween('completed_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                  ->orWhere(function($sub) use ($dateFrom, $dateTo) {
+                      $sub->whereNull('completed_at')
+                          ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+                  });
+            });
+        };
+
+        $paymentDateFilter = function($query, $dateFrom, $dateTo) {
+            return $query->where(function($q) use ($dateFrom, $dateTo) {
+                $q->whereBetween('paid_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59'])
+                  ->orWhere(function($sub) use ($dateFrom, $dateTo) {
+                      $sub->whereNull('paid_at')
+                          ->whereBetween('created_at', [$dateFrom . ' 00:00:00', $dateTo . ' 23:59:59']);
+                  });
+            });
+        };
+
+        // Query Stats
+        // 1. Revenue
+        $revenueQuery = Payment::where('status', 'paid');
+        $paymentDateFilter($revenueQuery, $from, $to);
+        if ($outletId) {
+            $revenueQuery->whereHas('booking', fn($q) => $q->where('outlet_id', $outletId));
         }
-        // maatwebsite/excel
-        return response()->json(['message'=>'Install maatwebsite/excel: composer require maatwebsite/excel']);
+        $revenue = $revenueQuery->sum('amount');
+        
+        // 2. Orders Served
+        $ordersQuery = Booking::where('status', 'completed');
+        $completedDateFilter($ordersQuery, $from, $to);
+        if ($outletId) {
+            $ordersQuery->where('outlet_id', $outletId);
+        }
+        $ordersCount = $ordersQuery->count();
+
+        // 3. Avg Per Order
+        $avgQuery = Booking::where('status', 'completed');
+        $completedDateFilter($avgQuery, $from, $to);
+        if ($outletId) {
+            $avgQuery->where('outlet_id', $outletId);
+        }
+        $avgAmount = $avgQuery->avg('total_amount') ?? 0;
+
+        // 4. Customer Satisfaction
+        $reviewsQuery = Review::whereBetween('created_at', [$from . ' 00:00:00', $to . ' 23:59:59']);
+        if ($outletId) {
+            $reviewsQuery->whereHas('booking', fn($q) => $q->where('outlet_id', $outletId));
+        }
+        $avgRating = $reviewsQuery->avg('rating');
+        $satisfaction = $avgRating ? $avgRating * 20 : 100.0;
+
+        // Get transactions
+        $bookingsQuery = Booking::with(['customer', 'package', 'outlet', 'payment'])
+            ->when($outletId, fn($q) => $q->where('outlet_id', $outletId));
+        $completedDateFilter($bookingsQuery, $from, $to);
+        $bookings = $bookingsQuery->latest()->get();
+
+        $outletName = $outletId ? (Outlet::find($outletId)->name ?? 'Outlet Baru') : 'Semua Outlet';
+
+        if ($format === 'pdf') {
+            return view('reports.print', compact('from', 'to', 'outletName', 'revenue', 'ordersCount', 'avgAmount', 'satisfaction', 'bookings'));
+        }
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=laporan-kinerja-{$from}-ke-{$to}.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use ($from, $to, $outletName, $revenue, $ordersCount, $avgAmount, $satisfaction, $bookings) {
+            $file = fopen('php://output', 'w');
+            
+            fputcsv($file, ['LAPORAN KINERJA OPERASIONAL']);
+            fputcsv($file, ["Periode: {$from} s/d {$to}"]);
+            fputcsv($file, ["Outlet: {$outletName}"]);
+            fputcsv($file, []);
+
+            fputcsv($file, ['RINGKASAN METRIK']);
+            fputcsv($file, ['Total Pendapatan (IDR)', 'Total Pesanan Selesai', 'Rata-rata per Pesanan (IDR)', 'Kepuasan Pelanggan (%)']);
+            fputcsv($file, [$revenue, $ordersCount, $avgAmount, $satisfaction]);
+            fputcsv($file, []);
+
+            fputcsv($file, ['DETAIL TRANSAKSI']);
+            fputcsv($file, ['Kode Booking', 'Pelanggan', 'Layanan', 'Outlet', 'Total Biaya (IDR)', 'Metode Pembayaran', 'Status', 'Tanggal Selesai/Dibuat']);
+
+            foreach ($bookings as $b) {
+                fputcsv($file, [
+                    $b->booking_code,
+                    $b->customer->name ?? '—',
+                    $b->package->name ?? $b->vehicle_name ?? '—',
+                    $b->outlet->name ?? '—',
+                    $b->total_amount,
+                    $b->payment->payment_method ?? '—',
+                    $b->status,
+                    $b->completed_at ? $b->completed_at->format('Y-m-d H:i:s') : $b->created_at->format('Y-m-d H:i:s')
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
     }
 }

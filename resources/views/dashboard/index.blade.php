@@ -11,14 +11,15 @@
             <p class="text-sm text-slate-500 mt-0.5">Real-time performance metrics untuk Vehicle Wash logistics.</p>
         </div>
         <div class="flex items-center gap-2">
-            <select class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
-                <option>Tahun 2024</option>
-                <option>Tahun 2023</option>
+            <select onchange="window.location.href = '/dashboard?year=' + this.value" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
+                @foreach($years as $y)
+                    <option value="{{ $y }}" {{ $selectedYear == $y ? 'selected' : '' }}>Tahun {{ $y }}</option>
+                @endforeach
             </select>
-            <button class="flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg" style="background:#F0C419; color:#1B2337;">
+            <a href="#" onclick="window.location.href = '/dashboard/export?year=' + document.querySelector('select').value; return false;" class="flex items-center gap-2 text-sm font-medium text-white px-4 py-2 rounded-lg" style="background:#F0C419; color:#1B2337;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Export
-            </button>
+            </a>
         </div>
     </div>
 

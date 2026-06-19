@@ -27,8 +27,8 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->middleware('auth');
 
-// Root redirect
-Route::get('/', fn() => redirect('/dashboard'));
+// Root route (public landing page)
+Route::get('/', [DashboardController::class, 'landing'])->name('landing');
 
 /*
 |──────────────────────────────────────────────────────
@@ -39,6 +39,7 @@ Route::middleware(['auth'])->group(function () {
 
     /* ── Dashboard ── */
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/export', [DashboardController::class, 'export'])->name('dashboard.export');
     Route::get('/onboarding', [DashboardController::class, 'onboarding'])->name('onboarding');
     Route::get('/search', [DashboardController::class, 'search'])->name('global-search');
 

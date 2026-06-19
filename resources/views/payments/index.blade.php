@@ -11,11 +11,11 @@
             <p class="text-sm text-slate-500 mt-0.5">Monitor seluruh transaksi pembayaran layanan</p>
         </div>
         <div class="flex gap-2">
-            <a href="/payments/export?format=excel" class="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white" style="background:#10B981;">
+            <a href="/payments/export?format=excel&{{ http_build_query(request()->except('format')) }}" class="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white" style="background:#10B981;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 Export Excel
             </a>
-            <a href="/payments/export?format=pdf" class="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white" style="background:#1B2337;">
+            <a href="/payments/export?format=pdf&{{ http_build_query(request()->except('format')) }}" target="_blank" class="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg text-white" style="background:#1B2337;">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
                 Export PDF
             </a>
