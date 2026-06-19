@@ -195,14 +195,14 @@ class CustomerSeeder extends Seeder
             // Register on OnoPay
             try {
                 $client = new \GuzzleHttp\Client(['cookies' => true]);
-                $response = $client->get('http://onopay.web.id/user/register');
+                $response = $client->get('https://onopay.web.id/user/register');
                 $html = (string) $response->getBody();
                 
                 preg_match('/name="_token"\s+value="([^"]+)"/', $html, $matches);
                 $token = $matches[1] ?? null;
                 
                 if ($token) {
-                    $client->post('http://onopay.web.id/user/register', [
+                    $client->post('https://onopay.web.id/user/register', [
                         'form_params' => [
                             '_token' => $token,
                             'name' => $c['name'],
@@ -220,7 +220,7 @@ class CustomerSeeder extends Seeder
             // Topup Rp 5.000.000
             try {
                 $client = new \GuzzleHttp\Client();
-                $client->post('http://onopay.web.id/api/v1/payment/topup', [
+                $client->post('https://onopay.web.id/api/v1/payment/topup', [
                     'json' => [
                         'phone_number' => $c['phone'],
                         'amount' => 5000000

@@ -122,4 +122,10 @@ class DashboardController extends Controller
 
         return view('dashboard.search', compact('q', 'bookings', 'technicians', 'customers'));
     }
+
+    public function onboarding()
+    {
+        return view('dashboard.onboarding');
+    }
 }
+
