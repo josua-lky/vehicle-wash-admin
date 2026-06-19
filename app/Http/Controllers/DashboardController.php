@@ -185,5 +185,30 @@ class DashboardController extends Controller
 
         return response()->stream($callback, 200, $headers);
     }
+
+    public function downloadApk()
+    {
+        $path = public_path('clean-vehicle-mobile.apk');
+        
+        // Fallback for cPanel / custom hosting where public contents are moved to public_html
+        if (!file_exists($path)) {
+            $path = base_path('../public_html/clean-vehicle-mobile.apk');
+        }
+        if (!file_exists($path)) {
+            $path = base_path('public_html/clean-vehicle-mobile.apk');
+        }
+        if (!file_exists($path)) {
+            $path = base_path('../public/clean-vehicle-mobile.apk');
+        }
+
+        if (file_exists($path)) {
+            return response()->download($path, 'clean-vehicle-mobile.apk', [
+                'Content-Type' => 'application/vnd.android.package-archive',
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            ]);
+        }
+
+        abort(404, 'File APK tidak ditemukan di server.');
+    }
 }
 

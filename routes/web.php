@@ -29,6 +29,7 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout')->midd
 
 // Root route (public landing page)
 Route::get('/', [DashboardController::class, 'landing'])->name('landing');
+Route::get('/clean-vehicle-mobile.apk', [DashboardController::class, 'downloadApk'])->name('apk.download');
 
 /*
 |──────────────────────────────────────────────────────
