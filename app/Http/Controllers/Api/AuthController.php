@@ -119,7 +119,12 @@ public function login(Request $request)
                 'Invalid credentials'
 
         ], 401);
+    }
 
+    if ($customer->status !== 'active') {
+        return response()->json([
+            'message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'
+        ], 403);
     }
 
     $token = $customer

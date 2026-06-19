@@ -130,6 +130,16 @@ class BookingController extends Controller
             ->first();
         $latitude = $defaultAddress ? $defaultAddress->latitude : null;
         $longitude = $defaultAddress ? $defaultAddress->longitude : null;
+        if (!empty($validated['technician_id'])) {
+            $scheduledAt = \Carbon\Carbon::parse($validated['scheduled_at'])->format('Y-m-d H:i:s');
+            $isTechnicianBooked = Booking::where('technician_id', $validated['technician_id'])
+                ->where('scheduled_at', $scheduledAt)
+                ->whereNotIn('status', ['cancelled', 'completed'])
+                ->exists();
+            if ($isTechnicianBooked) {
+                return response()->json(['message' => 'Teknisi pilihan Anda sudah memiliki jadwal di jam tersebut. Silakan pilih teknisi lain.'], 422);
+            }
+        }
 
         $outletSlotId = null;
         if (!empty($outletId)) {

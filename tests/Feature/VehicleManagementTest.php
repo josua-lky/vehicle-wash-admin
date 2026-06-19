@@ -18,12 +18,20 @@ class VehicleManagementTest extends TestCase
     {
         parent::setUp();
 
-        $this->customer = Customer::create([
-            'name' => 'Budi Santoso',
-            'email' => 'budi.s@example.com',
-            'phone' => '08123456789',
-            'password' => Hash::make('password123'),
-        ]);
+        $this->customer = Customer::where('email', 'budi.s@example.com')
+            ->orWhere('phone', '08123456789')
+            ->first();
+
+        if (!$this->customer) {
+            $this->customer = Customer::create([
+                'name' => 'Budi Santoso',
+                'email' => 'budi.s@example.com',
+                'phone' => '08123456789',
+                'password' => Hash::make('password123'),
+            ]);
+        }
+
+        Vehicle::where('customer_id', $this->customer->id)->delete();
     }
 
     public function test_customer_can_store_vehicle()

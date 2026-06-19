@@ -334,6 +334,59 @@ class TechnicianAppApiTest extends TestCase
             ]);
     }
 
+    public function test_customer_can_send_and_get_chat_messages()
+    {
+        $customer = Customer::first() ?? Customer::create([
+            'name' => 'Pelanggan Test',
+            'email' => 'pelanggan@example.com',
+            'phone' => '08111111111',
+            'password' => Hash::make('password123'),
+        ]);
+
+        $package = Package::first() ?? Package::create([
+            'name' => 'Premium Wash',
+            'description' => 'Premium washing package',
+            'price' => 50000,
+            'duration' => 60,
+        ]);
+
+        $booking = Booking::create([
+            'booking_code' => 'VW-TEST-T7',
+            'customer_id' => $customer->id,
+            'package_id' => $package->id,
+            'technician_id' => $this->technician->id,
+            'outlet_id' => $this->outlet->id,
+            'service_type' => 'home',
+            'scheduled_at' => now()->addDay()->format('Y-m-d H:i:s'),
+            'status' => 'confirmed',
+            'subtotal' => 50000,
+            'total_amount' => 50000,
+            'payment_status' => 'pending',
+        ]);
+
+        // 1. Send chat message as customer
+        $response = $this->actingAs($customer, 'sanctum')
+            ->postJson("/api/bookings/{$booking->id}/chat", [
+                'sender_type' => 'customer',
+                'message' => 'Halo pak, tolong dikabari ya kalau sudah dekat.'
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonPath('success', true);
+
+        // 2. Fetch messages as customer
+        $response = $this->actingAs($customer, 'sanctum')
+            ->getJson("/api/bookings/{$booking->id}/chat");
+
+        $response->assertStatus(200)
+            ->assertJsonCount(1)
+            ->assertJsonFragment([
+                'sender_type' => 'customer',
+                'message' => 'Halo pak, tolong dikabari ya kalau sudah dekat.'
+            ]);
+    }
+
+
     public function test_technician_rating_updates_and_review_is_returned()
     {
         $customer = Customer::first() ?? Customer::create([

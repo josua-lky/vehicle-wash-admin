@@ -50,7 +50,13 @@ class CustomerController extends Controller
 
     public function toggleStatus(Customer $customer)
     {
-        $customer->update(['status' => $customer->status==='active' ? 'inactive' : 'active']);
+        $newStatus = $customer->status === 'active' ? 'inactive' : 'active';
+        $customer->update(['status' => $newStatus]);
+        
+        if ($newStatus === 'inactive') {
+            $customer->tokens()->delete();
+        }
+        
         return back()->with('success','Status pelanggan berhasil diubah.');
     }
 

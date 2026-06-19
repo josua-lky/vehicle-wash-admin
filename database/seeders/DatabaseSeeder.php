@@ -136,6 +136,7 @@ class TechnicianSeeder extends Seeder
                 'rating'         => $t['rating'],     'total_orders'   => $t['total_orders'],
                 'join_date'      => $t['join_date'],  'created_at'     => now(), 'updated_at' => now(),
                 'password'       => bcrypt('password123'),
+                'password_plain' => 'password123',
             ]);
         }
         $this->command->info('  ✔ Technicians: ' . count($technicians));

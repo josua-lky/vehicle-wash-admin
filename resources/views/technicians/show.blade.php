@@ -42,6 +42,10 @@
                     <span class="font-medium text-slate-700">{{ $technician->email ?? '-' }}</span>
                 </div>
                 <div class="flex justify-between">
+                    <span class="text-slate-400">Sandi Login</span>
+                    <span class="font-medium text-slate-700 font-mono">{{ $technician->password_plain ?? 'Tidak tersedia (hashed)' }}</span>
+                </div>
+                <div class="flex justify-between">
                     <span class="text-slate-400">Area Kerja</span>
                     <span class="font-medium text-slate-700">{{ $technician->area }}</span>
                 </div>

@@ -51,6 +51,7 @@ class TechnicianController extends Controller
         $data['area']   = null;
         $data['status'] = 'active';
         $data['rating'] = 0.0;
+        $data['password_plain'] = $data['password'];
         $data['password'] = bcrypt($data['password']);
         Technician::create($data);
         return back()->with('success', 'Teknisi berhasil ditambahkan.');
@@ -81,6 +82,7 @@ class TechnicianController extends Controller
             'status'         => 'required|in:active,inactive,cuti,busy',
         ]);
         if (!empty($data['password'])) {
+            $data['password_plain'] = $data['password'];
             $data['password'] = bcrypt($data['password']);
         } else {
             unset($data['password']);

@@ -11,7 +11,7 @@ class Technician extends Authenticatable
     use HasApiTokens, SoftDeletes, Notifiable;
 
     protected $fillable = [
-        'name','email','password','phone','profile_photo','specialization',
+        'name','email','password','password_plain','phone','profile_photo','specialization',
         'area','outlet_id','status','rating','total_orders',
         'join_date','notes','fcm_token','latitude','longitude',
     ];

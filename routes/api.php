@@ -13,12 +13,12 @@ Route::post('/technician/login',[TechnicianAppController::class,'login']);
 
 Route::get( '/packages', [PackageController::class, 'index'] );
 
-Route::middleware('auth:sanctum')
+Route::middleware(['auth:sanctum', 'customer.active'])
 ->put('/profile', [
     AuthController::class,
     'updateProfile'
 ]);
-Route::middleware('auth:sanctum')->group(function(){
+Route::middleware(['auth:sanctum', 'customer.active'])->group(function(){
     
 
     Route::get('/profile',
@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function(){
 });
 
 
-Route::middleware('auth:sanctum')->group(function () {
+Route::middleware(['auth:sanctum', 'customer.active'])->group(function () {
     Route::get('/bookings', [BookingController::class, 'index']);
     Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
@@ -84,7 +84,12 @@ Route::get('/outlets', function() {
 });
 
 Route::get('/technicians', function() {
-    return response()->json(Technician::where('status', 'active')->get());
+    return response()->json(Technician::where('status', 'active')
+        ->with(['bookings' => function($query) {
+            $query->whereNotIn('status', ['cancelled', 'completed'])
+                  ->select('id', 'technician_id', 'scheduled_at', 'status');
+        }])
+        ->get());
 });
 
 Route::get('/promos', function() {
