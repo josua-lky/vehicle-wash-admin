@@ -158,9 +158,9 @@ class TechnicianAppController extends Controller
 
         if ($photo && preg_match('/^data:image\/(\w+);base64,/', $photo, $type)) {
             $data = substr($photo, strpos($photo, ',') + 1);
-            $type = strtolower($type[1]); // jpg, png, gif
+            $type = strtolower($type[1]); // jpg, png, gif, webp
 
-            if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
+            if (in_array($type, ['jpg', 'jpeg', 'gif', 'png', 'webp'])) {
                 $data = str_replace(' ', '+', $data);
                 $data = base64_decode($data);
 
@@ -173,7 +173,11 @@ class TechnicianAppController extends Controller
         } elseif ($photo === null) {
             $profilePhotoPath = null;
         } elseif (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
-            $profilePhotoPath = $photo;
+            if (str_contains($photo, 'ui-avatars.com')) {
+                $profilePhotoPath = null;
+            } else {
+                $profilePhotoPath = $photo;
+            }
         }
 
         $technician->update([
