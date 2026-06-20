@@ -172,6 +172,28 @@ Route::get('/storage-link-fix', function () {
     }
 });
 
+Route::get('/storage-file/{path}', function ($path) {
+    if (str_contains($path, '..')) {
+        abort(404);
+    }
+    
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    
+    $realStoragePath = realpath(storage_path('app/public'));
+    $realFilePath = realpath($filePath);
+    
+    if ($realStoragePath === false || $realFilePath === false || !str_starts_with($realFilePath, $realStoragePath)) {
+        abort(404);
+    }
+    
+    $file = file_get_contents($filePath);
+    $type = mime_content_type($filePath);
+    return response($file)->header('Content-Type', $type);
+})->where('path', '.*');
+
 Route::get('/storage/{path}', function ($path) {
     if (str_contains($path, '..')) {
         abort(404);

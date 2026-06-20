@@ -125,7 +125,7 @@
                                 'orders' => $tOrders,
                                 'area' => $tArea,
                                 'since' => $tSince,
-                                'avatar' => is_array($t) ? (isset($t['profile_photo']) && $t['profile_photo'] ? asset('storage/'.$t['profile_photo']) : '') : ($t->profile_photo ? $t->avatar : '')
+                                'avatar' => is_array($t) ? (isset($t['profile_photo']) && $t['profile_photo'] ? asset('storage-file/'.$t['profile_photo']) : '') : ($t->profile_photo ? $t->avatar : '')
                             ];
                         @endphp
                         <tr class="table-row cursor-pointer" @click="selectTech({{ json_encode($tArray) }})">
@@ -134,7 +134,7 @@
                                     <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden"
                                          style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
                                         @if(is_array($t) && !empty($t['profile_photo']))
-                                            <img src="{{ asset('storage/'.$t['profile_photo']) }}" alt="avatar" class="w-full h-full object-cover">
+                                            <img src="{{ asset('storage-file/'.$t['profile_photo']) }}" alt="avatar" class="w-full h-full object-cover">
                                         @elseif(!is_array($t) && $t->profile_photo)
                                             <img src="{{ $t->avatar }}" alt="avatar" class="w-full h-full object-cover">
                                         @else

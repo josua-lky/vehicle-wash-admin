@@ -99,7 +99,7 @@
                     <div class="space-y-2">
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sebelum Cuci (Before)</p>
                         <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm max-w-md">
-                            <img src="{{ asset('storage/' . $booking->before_photo) }}" alt="Foto Sebelum" class="w-full h-48 object-cover">
+                             <img src="{{ asset('storage-file/' . $booking->before_photo) }}" alt="Foto Sebelum" class="w-full h-48 object-cover">
                         </div>
                     </div>
                     @endif
@@ -107,7 +107,7 @@
                     <div class="space-y-2">
                         <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sesudah Cuci (After)</p>
                         <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm max-w-md">
-                            <img src="{{ asset('storage/' . $booking->after_photo) }}" alt="Foto Sesudah" class="w-full h-48 object-cover">
+                             <img src="{{ asset('storage-file/' . $booking->after_photo) }}" alt="Foto Sesudah" class="w-full h-48 object-cover">
                         </div>
                     </div>
                     @endif

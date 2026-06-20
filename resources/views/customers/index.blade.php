@@ -102,7 +102,7 @@
                                     if (is_array($c)) {
                                         $photo = $c['profile_photo'] ?? null;
                                         if ($photo) {
-                                            $avatarUrl = str_starts_with($photo, 'http') ? $photo : asset('storage/' . $photo);
+                                            $avatarUrl = str_starts_with($photo, 'http') ? $photo : asset('storage-file/' . $photo);
                                         }
                                     } else {
                                         $avatarUrl = $c->avatar;

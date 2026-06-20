@@ -65,6 +65,6 @@ class Customer extends Authenticatable
         if (str_starts_with($this->profile_photo, 'http://') || str_starts_with($this->profile_photo, 'https://')) {
             return $this->profile_photo;
         }
-        return asset('storage/'.$this->profile_photo);
+        return asset('storage-file/'.$this->profile_photo);
     }
 }
