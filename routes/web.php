@@ -147,3 +147,48 @@ Route::middleware(['auth'])->group(function () {
 |──────────────────────────────────────────────────────
 */
 Route::post('/webhook/payment', [PaymentController::class, 'webhook'])->name('webhook.payment');
+
+/*
+|--------------------------------------------------------------------------
+| Storage Symlink Fix and Fallback Routes
+|--------------------------------------------------------------------------
+*/
+Route::get('/storage-link-fix', function () {
+    try {
+        $shortcut = public_path('storage');
+        if (is_link($shortcut) || file_exists($shortcut)) {
+            if (PHP_OS === 'WINNT') {
+                exec('rmdir ' . escapeshellarg($shortcut));
+            } else {
+                unlink($shortcut);
+            }
+        }
+        \Illuminate\Support\Facades\Artisan::call('storage:link');
+        return "Storage link fixed successfully! Output: " . \Illuminate\Support\Facades\Artisan::output();
+    } catch (\Exception $e) {
+        return "Error fixing storage link: " . $e->getMessage();
+    }
+});
+
+Route::get('/storage/{path}', function ($path) {
+    if (str_contains($path, '..')) {
+        abort(404);
+    }
+    
+    $filePath = storage_path('app/public/' . $path);
+    if (!file_exists($filePath)) {
+        abort(404);
+    }
+    
+    $realStoragePath = realpath(storage_path('app/public'));
+    $realFilePath = realpath($filePath);
+    
+    if ($realStoragePath === false || $realFilePath === false || !str_starts_with($realFilePath, $realStoragePath)) {
+        abort(404);
+    }
+    
+    $file = file_get_contents($filePath);
+    $type = mime_content_type($filePath);
+    return response($file)->header('Content-Type', $type);
+})->where('path', '.*');
+
