@@ -213,7 +213,10 @@
                             this.unreadCount = data.count;
                             this.notifications = data.notifications;
                         } catch (e) {
-                                  async markAsRead(id) {
+                            console.error(e);
+                        }
+                    },
+                    async markAsRead(id) {
                         try {
                             await fetch(`/notifications/${id}/read`, {
                                 method: 'PATCH',
@@ -262,6 +265,35 @@
                         } catch (e) {
                             console.error(e);
                         }
+                    },
+                    async deleteNotification(id) {
+                        try {
+                            await fetch(`/notifications/${id}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=&quot;csrf-token&quot;]').content,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            this.fetchNotifications();
+                        } catch (e) {
+                            console.error(e);
+                        }
+                    },
+                    async deleteAllNotifications() {
+                        if (!confirm('Hapus semua riwayat notifikasi?')) return;
+                        try {
+                            await fetch('/notifications/delete-all', {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=&quot;csrf-token&quot;]').content,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                            this.fetchNotifications();
+                        } catch (e) {
+                            console.error(e);
+                        }
                     }
                 }" class="relative">
                     <button @click="open = !open" class="relative p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg">
@@ -274,16 +306,23 @@
                     <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
                         <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <span class="text-xs font-semibold text-slate-700">Notifikasi (<span x-text="unreadCount"></span>)</span>
-                            <button x-show="unreadCount > 0" @click="markAllAsRead" class="text-[10px] text-blue-600 hover:underline">Tandai semua dibaca</button>
+                            <div class="flex items-center gap-1.5">
+                                <button x-show="unreadCount > 0" @click="markAllAsRead" class="text-[10px] text-blue-600 hover:underline">Tandai dibaca</button>
+                                <span x-show="unreadCount > 0 && notifications.length > 0" class="text-[9px] text-slate-300">|</span>
+                                <button x-show="notifications.length > 0" @click="deleteAllNotifications" class="text-[10px] text-red-650 hover:underline">Hapus Semua</button>
+                            </div>
                         </div>
                         <div class="max-h-72 overflow-y-auto divide-y divide-slate-50">
                             <template x-for="n in notifications" :key="n.id">
-                                <div class="p-3 hover:bg-slate-50 flex flex-col gap-0.5 cursor-pointer" @click="handleNotificationClick(n)">
+                                <div class="p-3 hover:bg-slate-50 flex flex-col gap-0.5 cursor-pointer relative pr-8" @click="handleNotificationClick(n)">
                                     <div class="flex justify-between items-start">
                                         <span class="text-[11px] font-bold text-slate-700" x-text="n.title"></span>
                                         <span class="text-[9px] text-slate-400" x-text="new Date(n.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})"></span>
                                     </div>
                                     <p class="text-xs text-slate-500 leading-normal" x-text="n.body"></p>
+                                    <button @click.stop="deleteNotification(n.id)" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-300 hover:text-red-500 p-1" title="Hapus">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                    </button>
                                 </div>
                             </template>
                             <div x-show="notifications.length === 0" class="p-6 text-center text-xs text-slate-400">Tidak ada notifikasi baru</div>

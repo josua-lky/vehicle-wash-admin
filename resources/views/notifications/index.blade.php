@@ -11,13 +11,22 @@
             <h1 class="text-xl font-bold text-slate-800">Notifikasi Sistem</h1>
             <p class="text-sm text-slate-500 mt-0.5">Pantau aktivitas real-time Booking, Pembayaran, dan Ulasan</p>
         </div>
-        <button type="button"
-                @click="markAllAsRead()"
-                x-show="hasUnread"
-                class="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
-                x-cloak>
-            Tandai Semua Dibaca
-        </button>
+        <div class="flex items-center gap-2">
+            <button type="button"
+                    @click="markAllAsRead()"
+                    x-show="hasUnread"
+                    class="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50"
+                    x-cloak>
+                Tandai Semua Dibaca
+            </button>
+            @if($notifications->count() > 0)
+            <button type="button"
+                    @click="deleteAllNotifications()"
+                    class="flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-lg border border-red-200 text-red-650 hover:bg-red-50">
+                Hapus Semua Riwayat
+            </button>
+            @endif
+        </div>
     </div>
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
@@ -35,15 +44,23 @@
                 <p class="text-sm text-slate-600 leading-normal">{{ $n->body }}</p>
             </div>
 
-            @if(!$n->is_read)
-            <button type="button"
-                    @click.stop="markAsRead('{{ $n->id }}')"
-                    class="text-xs text-blue-600 hover:underline font-medium flex-shrink-0">
-                Tandai dibaca
-            </button>
-            @else
-            <span class="text-xs text-slate-400 flex-shrink-0">Sudah dibaca</span>
-            @endif
+            <div class="flex items-center gap-3">
+                @if(!$n->is_read)
+                <button type="button"
+                        @click.stop="markAsRead('{{ $n->id }}')"
+                        class="text-xs text-blue-600 hover:underline font-medium flex-shrink-0">
+                    Tandai dibaca
+                </button>
+                @else
+                <span class="text-xs text-slate-400 flex-shrink-0">Sudah dibaca</span>
+                @endif
+                <span class="text-slate-300 text-xs">|</span>
+                <button type="button"
+                        @click.stop="deleteNotification('{{ $n->id }}')"
+                        class="text-xs text-red-500 hover:text-red-750 font-medium flex-shrink-0 hover:underline">
+                    Hapus
+                </button>
+            </div>
         </div>
         @empty
         <div class="p-12 text-center text-slate-400">
@@ -108,6 +125,41 @@ function notificationPage() {
             try {
                 const response = await fetch('/notifications/read-all', {
                     method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async deleteNotification(id) {
+            try {
+                const response = await fetch(`/notifications/${id}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        },
+        async deleteAllNotifications() {
+            if (!confirm('Hapus semua riwayat notifikasi?')) return;
+            try {
+                const response = await fetch('/notifications/delete-all', {
+                    method: 'DELETE',
                     headers: {
                         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
                         'Content-Type': 'application/json',

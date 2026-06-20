@@ -49,4 +49,17 @@ class NotificationController extends Controller
             ]);
         return response()->json(['success' => true]);
     }
+
+    public function destroy($id)
+    {
+        $notification = PushNotification::findOrFail($id);
+        $notification->delete();
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteAll()
+    {
+        PushNotification::whereNull('customer_id')->delete();
+        return response()->json(['success' => true]);
+    }
 }
