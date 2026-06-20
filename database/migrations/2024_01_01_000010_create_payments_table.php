@@ -13,6 +13,7 @@ return new class extends Migration {
             $table->string('payment_provider', 50)->nullable();
             $table->string('transaction_id', 100)->nullable()->unique();
             $table->enum('status', ['pending','paid','failed','refunded','expired'])->default('pending');
+            $table->boolean('refund_requested')->default(false);
             $table->decimal('amount',        12, 2);
             $table->decimal('refund_amount', 12, 2)->nullable();
             $table->timestamp('paid_at')->nullable();

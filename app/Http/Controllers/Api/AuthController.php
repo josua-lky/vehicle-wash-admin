@@ -169,32 +169,41 @@ public function login(Request $request)
         $customer = $request->user();
     
         $validated = $request->validate([
-    
             'name' => 'required',
-    
-            'profile_photo' =>
-                'nullable'
-    
+            'profile_photo' => 'nullable'
         ]);
-    
+
+        $photo = $request->input('profile_photo');
+        $profilePhotoPath = $customer->profile_photo;
+
+        if ($photo && preg_match('/^data:image\/(\w+);base64,/', $photo, $type)) {
+            $data = substr($photo, strpos($photo, ',') + 1);
+            $type = strtolower($type[1]); // jpg, png, gif
+
+            if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
+                $data = str_replace(' ', '+', $data);
+                $data = base64_decode($data);
+
+                if ($data !== false) {
+                    $fileName = 'avatars/' . uniqid() . '.' . $type;
+                    \Storage::disk('public')->put($fileName, $data);
+                    $profilePhotoPath = $fileName;
+                }
+            }
+        } elseif ($photo === null) {
+            $profilePhotoPath = null;
+        } elseif (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+            $profilePhotoPath = $photo;
+        }
+
         $customer->update([
-    
-            'name' =>
-                $validated['name'],
-    
-            'profile_photo' =>
-                $validated['profile_photo']
-                    ?? null
-    
+            'name' => $validated['name'],
+            'profile_photo' => $profilePhotoPath
         ]);
     
         return response()->json([
-    
             'user' => $customer,
-    
-            'message' =>
-                'Profile updated'
-    
+            'message' => 'Profile updated'
         ]);
     }
 

@@ -18,9 +18,13 @@
         {{-- Profile Summary Card --}}
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
             <div class="text-center">
-                <div class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-3xl font-bold text-white mb-4"
+                <div class="w-20 h-20 mx-auto rounded-2xl flex items-center justify-center text-3xl font-bold text-white mb-4 overflow-hidden"
                      style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
-                    {{ strtoupper(substr($technician->name, 0, 1)) }}
+                    @if($technician->profile_photo)
+                        <img src="{{ $technician->avatar }}" alt="avatar" class="w-full h-full object-cover">
+                    @else
+                        {{ strtoupper(substr($technician->name, 0, 1)) }}
+                    @endif
                 </div>
                 <h2 class="text-lg font-bold text-slate-800">{{ $technician->name }}</h2>
                 <p class="text-sm text-slate-400 mt-0.5">{{ $technician->phone }}</p>

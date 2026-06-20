@@ -30,6 +30,8 @@ class Customer extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
+    protected $appends = ['avatar'];
+
     public function bookings()
     {
         return $this->hasMany(Booking::class);
@@ -55,10 +57,14 @@ class Customer extends Authenticatable
 
     public function getAvatarAttribute()
     {
-        return $this->profile_photo
-            ? asset('storage/'.$this->profile_photo)
-            : 'https://ui-avatars.com/api/?name='
+        if (!$this->profile_photo) {
+            return 'https://ui-avatars.com/api/?name='
                 .urlencode($this->name)
                 .'&background=1B2337&color=F0C419';
+        }
+        if (str_starts_with($this->profile_photo, 'http://') || str_starts_with($this->profile_photo, 'https://')) {
+            return $this->profile_photo;
+        }
+        return asset('storage/'.$this->profile_photo);
     }
 }

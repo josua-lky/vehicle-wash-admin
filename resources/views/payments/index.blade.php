@@ -185,6 +185,7 @@
                             $payMethodType = $pay['method_type'] ?? 'ewallet';
                             $payStatus = $pay['status'] ?? 'pending';
                             $payActionId = $pay['id'] ?? '';
+                            $payRefundRequested = $pay['refund_requested'] ?? false;
                         } else {
                             $payId = 'PAY-' . $pay->id;
                             $payBookingCode = $pay->booking ? $pay->booking->booking_code : '-';
@@ -195,6 +196,7 @@
                             $payMethodType = 'ewallet';
                             $payStatus = $pay->status;
                             $payActionId = $pay->id;
+                            $payRefundRequested = $pay->refund_requested;
                         }
                         [$slabel,$sclass] = $payStatusBadge[$payStatus] ?? ['—','badge-gray'];
                     @endphp
@@ -219,14 +221,23 @@
                                 <span class="text-xs text-slate-600">{{ $payMethod }}</span>
                             </div>
                         </td>
-                        <td class="px-4 py-4"><span class="badge {{ $sclass }}">{{ $slabel }}</span></td>
+                        <td class="px-4 py-4">
+                            <span class="badge {{ $sclass }}">{{ $slabel }}</span>
+                            @if($payRefundRequested)
+                                <span class="badge badge-red ml-1">Butuh Refund</span>
+                            @endif
+                        </td>
                         <td class="px-4 py-4">
                             <div class="flex gap-1">
                                 <a href="/payments/{{ $payActionId }}" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Detail</a>
                                 @if($payStatus==='paid')
                                 <form method="POST" action="/payments/{{ $payActionId }}/refund" class="inline">
                                     @csrf @method('PATCH')
-                                    <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">Refund</button>
+                                    @if($payRefundRequested)
+                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg text-white font-semibold" style="background:#EF4444;">Setujui Refund</button>
+                                    @else
+                                        <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border border-red-200 text-red-500 hover:bg-red-50">Refund</button>
+                                    @endif
                                 </form>
                                 @elseif($payStatus==='pending')
                                 <form method="POST" action="/payments/{{ $payActionId }}/confirm" class="inline">

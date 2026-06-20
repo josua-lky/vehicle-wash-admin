@@ -22,15 +22,21 @@ class Technician extends Authenticatable
 
     protected $casts = ['rating'=>'float','join_date'=>'date','total_orders'=>'integer'];
 
+    protected $appends = ['avatar'];
+
     public function outlet()   { return $this->belongsTo(Outlet::class); }
     public function bookings() { return $this->hasMany(Booking::class); }
     public function reviews()  { return $this->hasMany(Review::class); }
 
     public function getAvatarAttribute()
     {
-        return $this->profile_photo
-            ? asset('storage/'.$this->profile_photo)
-            : 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=1B2337&color=F0C419';
+        if (!$this->profile_photo) {
+            return 'https://ui-avatars.com/api/?name='.urlencode($this->name).'&background=1B2337&color=F0C419';
+        }
+        if (str_starts_with($this->profile_photo, 'http://') || str_starts_with($this->profile_photo, 'https://')) {
+            return $this->profile_photo;
+        }
+        return asset('storage/'.$this->profile_photo);
     }
 
     public function updateRating()

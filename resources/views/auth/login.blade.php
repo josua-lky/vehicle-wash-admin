@@ -143,6 +143,14 @@
                 <p class="font-bold text-slate-800">Vehicle Wash Admin</p>
             </div>
 
+            {{-- Back to landing button --}}
+            <div class="mb-6">
+                <a href="{{ route('landing') }}" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-850 hover:underline transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                    Kembali ke Beranda Publik
+                </a>
+            </div>
+
             {{-- Form header --}}
             <div class="mb-8">
                 <h2 class="text-2xl font-bold text-slate-800 mb-1">Selamat Datang 👋</h2>

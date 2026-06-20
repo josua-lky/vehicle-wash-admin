@@ -111,7 +111,7 @@ class PaymentManagementTest extends TestCase
         $responseRefund = $this->actingAs($user)
             ->patch("/payments/{$payment->id}/refund");
         $responseRefund->assertStatus(302);
-        $responseRefund->assertSessionHas('success', 'Refund berhasil diproses.');
+        $responseRefund->assertSessionHas('success', 'Refund berhasil diproses dan saldo pelanggan telah dikembalikan.');
         $this->assertEquals('refunded', $payment->fresh()->status);
 
         // Test confirm PATCH
@@ -153,5 +153,45 @@ class PaymentManagementTest extends TestCase
         $responseSearch = $this->actingAs($user)
             ->get('/payments?search=Budi');
         $responseSearch->assertStatus(200);
+    }
+
+    public function test_cancellation_sets_refund_requested_and_notifies_admin()
+    {
+        $customer = Customer::first() ?: Customer::create([
+            'name' => 'Test Customer',
+            'email' => 'test@example.com',
+            'phone' => '08122334455',
+            'password' => \Illuminate\Support\Facades\Hash::make('password123'),
+            'status' => 'active',
+        ]);
+
+        $booking = Booking::create([
+            'booking_code' => 'VW-TCR',
+            'customer_id' => $customer->id,
+            'scheduled_at' => now(),
+            'status' => 'confirmed',
+            'subtotal' => 50000,
+            'total_amount' => 50000,
+        ]);
+
+        $payment = Payment::create([
+            'booking_id' => $booking->id,
+            'payment_method' => 'ewallet',
+            'amount' => 50000,
+            'status' => 'paid',
+        ]);
+
+        $initialNotifCount = \App\Models\PushNotification::where('type', 'refund_requested')->count();
+
+        $response = $this->actingAs($customer, 'sanctum')
+            ->putJson("/api/bookings/{$booking->id}/cancel", ['reason' => 'Batal dong']);
+
+        $response->assertStatus(200);
+        $this->assertEquals('cancelled', $booking->fresh()->status);
+        $this->assertTrue((bool)$payment->fresh()->refund_requested);
+
+        // Check notification
+        $newNotifCount = \App\Models\PushNotification::where('type', 'refund_requested')->count();
+        $this->assertEquals($initialNotifCount + 1, $newNotifCount);
     }
 }

@@ -124,15 +124,22 @@
                                 'rating' => $tRating,
                                 'orders' => $tOrders,
                                 'area' => $tArea,
-                                'since' => $tSince
+                                'since' => $tSince,
+                                'avatar' => is_array($t) ? (isset($t['profile_photo']) && $t['profile_photo'] ? asset('storage/'.$t['profile_photo']) : '') : ($t->profile_photo ? $t->avatar : '')
                             ];
                         @endphp
                         <tr class="table-row cursor-pointer" @click="selectTech({{ json_encode($tArray) }})">
                             <td class="px-5 py-4">
                                 <div class="flex items-center gap-3">
-                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                                    <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden"
                                          style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
-                                        {{ strtoupper(substr($tName,0,1)) }}
+                                        @if(is_array($t) && !empty($t['profile_photo']))
+                                            <img src="{{ asset('storage/'.$t['profile_photo']) }}" alt="avatar" class="w-full h-full object-cover">
+                                        @elseif(!is_array($t) && $t->profile_photo)
+                                            <img src="{{ $t->avatar }}" alt="avatar" class="w-full h-full object-cover">
+                                        @else
+                                            {{ strtoupper(substr($tName,0,1)) }}
+                                        @endif
                                     </div>
                                     <div>
                                         <p class="font-semibold text-slate-800 text-sm">{{ $tName }}</p>
@@ -200,9 +207,14 @@
                     <div>
                         {{-- Header --}}
                         <div class="flex items-center gap-3 mb-5">
-                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white"
+                            <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white overflow-hidden"
                                  style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
-                                <span x-text="selected.name.charAt(0).toUpperCase()"></span>
+                                <template x-if="selected.avatar">
+                                    <img :src="selected.avatar" alt="avatar" class="w-full h-full object-cover">
+                                </template>
+                                <template x-if="!selected.avatar">
+                                    <span x-text="selected.name.charAt(0).toUpperCase()"></span>
+                                </template>
                             </div>
                             <div class="flex-1">
                                 <h3 class="font-bold text-slate-800" x-text="selected.name"></h3>

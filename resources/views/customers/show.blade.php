@@ -21,10 +21,14 @@
         {{-- Profile Card --}}
         <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 space-y-6">
             <div class="text-center">
-                <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl font-bold text-white mb-4"
-                     style="background:linear-gradient(135deg,#1B2337,#2D3D5E);">
-                    {{ strtoupper(substr($customer->name, 0, 1)) }}
-                </div>
+                @if($customer->profile_photo && $customer->avatar)
+                    <img src="{{ $customer->avatar }}" class="w-20 h-20 mx-auto rounded-full object-cover mb-4" alt="{{ $customer->name }}">
+                @else
+                    <div class="w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl font-bold text-white mb-4"
+                         style="background:linear-gradient(135deg,#1B2337,#2D3D5E);">
+                        {{ strtoupper(substr($customer->name, 0, 1)) }}
+                    </div>
+                @endif
                 <h2 class="text-lg font-bold text-slate-800">{{ $customer->name }}</h2>
                 <p class="text-sm text-slate-400 mt-0.5">{{ $customer->phone }}</p>
                 <div class="mt-2.5">

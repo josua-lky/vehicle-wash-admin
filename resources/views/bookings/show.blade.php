@@ -193,9 +193,13 @@
                 <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Teknisi Ditugaskan</h4>
                 @if($booking->technician)
                 <div class="flex items-center gap-3 pb-2 border-b border-slate-100">
-                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                    <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden"
                          style="background:linear-gradient(135deg,#1B2337,#3B82F6);">
-                         {{ strtoupper(substr($booking->technician->name, 0, 1)) }}
+                         @if($booking->technician->profile_photo)
+                             <img src="{{ $booking->technician->avatar }}" alt="avatar" class="w-full h-full object-cover">
+                         @else
+                             {{ strtoupper(substr($booking->technician->name, 0, 1)) }}
+                         @endif
                     </div>
                     <div>
                         <p class="font-semibold text-slate-800 text-sm">{{ $booking->technician->name }}</p>

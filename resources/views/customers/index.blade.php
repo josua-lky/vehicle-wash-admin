@@ -97,7 +97,23 @@
                     <tr class="table-row">
                         <td class="px-5 py-4">
                             <div class="flex items-center gap-3">
-                                <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background:linear-gradient(135deg,#1B2337,#2D3D5E);">{{ strtoupper(substr($cName,0,1)) }}</div>
+                                @php
+                                    $avatarUrl = null;
+                                    if (is_array($c)) {
+                                        $photo = $c['profile_photo'] ?? null;
+                                        if ($photo) {
+                                            $avatarUrl = str_starts_with($photo, 'http') ? $photo : asset('storage/' . $photo);
+                                        }
+                                    } else {
+                                        $avatarUrl = $c->avatar;
+                                    }
+                                    $hasCustomPhoto = is_array($c) ? (!empty($c['profile_photo'])) : (!empty($c->profile_photo));
+                                @endphp
+                                @if($hasCustomPhoto && $avatarUrl)
+                                    <img src="{{ $avatarUrl }}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" alt="{{ $cName }}">
+                                @else
+                                    <div class="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style="background:linear-gradient(135deg,#1B2337,#2D3D5E);">{{ strtoupper(substr($cName,0,1)) }}</div>
+                                @endif
                                 <div>
                                     <p class="font-semibold text-slate-800 text-sm">{{ $cName }}</p>
                                     <p class="text-xs text-slate-400">Bergabung {{ $cJoined }}</p>

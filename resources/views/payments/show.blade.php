@@ -14,7 +14,7 @@
             <form method="POST" action="/payments/{{ $payment->id }}/refund" class="inline">
                 @csrf @method('PATCH')
                 <button type="submit" class="text-sm font-semibold px-4 py-2 rounded-lg text-white" style="background:#EF4444;">
-                    Refund Pembayaran
+                    {{ $payment->refund_requested ? 'Setujui Refund' : 'Refund Pembayaran' }}
                 </button>
             </form>
             @elseif($payment->status === 'pending')
@@ -41,7 +41,12 @@
                         $payStatusBadge = ['paid'=>['Sukses','badge-green'],'pending'=>['Pending','badge-yellow'],'failed'=>['Gagal','badge-red'],'refunded'=>['Refund','badge-purple'],'expired'=>['Expired','badge-gray']];
                         [$label,$class] = $payStatusBadge[$payment->status] ?? ['—','badge-gray'];
                     @endphp
-                    <span class="badge {{ $class }} text-sm py-1.5 px-3">{{ $label }}</span>
+                    <div>
+                        <span class="badge {{ $class }} text-sm py-1.5 px-3">{{ $label }}</span>
+                        @if($payment->refund_requested)
+                            <span class="badge badge-red text-sm py-1.5 px-3 ml-1">Butuh Refund</span>
+                        @endif
+                    </div>
                 </div>
 
                 <hr class="border-slate-100">

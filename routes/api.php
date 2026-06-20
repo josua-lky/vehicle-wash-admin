@@ -68,6 +68,7 @@ Route::middleware(['auth:sanctum', 'customer.active'])->group(function () {
     Route::post('/bookings/{id}/review', [BookingController::class, 'submitReview']);
 
     // Technician App routes
+    Route::put('/technician/profile', [TechnicianAppController::class, 'updateProfile']);
     Route::post('/technician/location', [TechnicianAppController::class, 'updateLocation']);
     Route::get('/technician/bookings', [TechnicianAppController::class, 'bookings']);
     Route::post('/technician/bookings/{id}/status', [TechnicianAppController::class, 'updateStatus']);

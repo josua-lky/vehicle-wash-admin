@@ -54,7 +54,7 @@ class TechnicianAppController extends Controller
         $booking = Booking::findOrFail($id);
         
         // Ensure this technician owns the booking
-        if ($booking->technician_id !== $request->user()->id) {
+        if ((int) $booking->technician_id !== (int) $request->user()->id) {
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
@@ -141,6 +141,49 @@ class TechnicianAppController extends Controller
         return response()->json([
             'success' => true,
             'message' => $message
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $technician = $request->user();
+        
+        $validated = $request->validate([
+            'name' => 'required|string',
+            'profile_photo' => 'nullable'
+        ]);
+
+        $photo = $request->input('profile_photo');
+        $profilePhotoPath = $technician->profile_photo;
+
+        if ($photo && preg_match('/^data:image\/(\w+);base64,/', $photo, $type)) {
+            $data = substr($photo, strpos($photo, ',') + 1);
+            $type = strtolower($type[1]); // jpg, png, gif
+
+            if (in_array($type, ['jpg', 'jpeg', 'gif', 'png'])) {
+                $data = str_replace(' ', '+', $data);
+                $data = base64_decode($data);
+
+                if ($data !== false) {
+                    $fileName = 'avatars/' . uniqid() . '.' . $type;
+                    Storage::disk('public')->put($fileName, $data);
+                    $profilePhotoPath = $fileName;
+                }
+            }
+        } elseif ($photo === null) {
+            $profilePhotoPath = null;
+        } elseif (str_starts_with($photo, 'http://') || str_starts_with($photo, 'https://')) {
+            $profilePhotoPath = $photo;
+        }
+
+        $technician->update([
+            'name' => $validated['name'],
+            'profile_photo' => $profilePhotoPath
+        ]);
+
+        return response()->json([
+            'user' => $technician->load('outlet'),
+            'message' => 'Profil berhasil diperbarui'
         ]);
     }
 }

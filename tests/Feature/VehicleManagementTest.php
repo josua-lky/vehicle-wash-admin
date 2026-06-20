@@ -28,7 +28,10 @@ class VehicleManagementTest extends TestCase
                 'email' => 'budi.s@example.com',
                 'phone' => '08123456789',
                 'password' => Hash::make('password123'),
+                'status' => 'active',
             ]);
+        } else {
+            $this->customer->update(['status' => 'active']);
         }
 
         Vehicle::where('customer_id', $this->customer->id)->delete();

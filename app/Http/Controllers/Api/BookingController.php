@@ -268,13 +268,20 @@ class BookingController extends Controller
         if ($booking->status !== 'cancelled') {
             $booking->update([
                 'status' => 'cancelled',
-                'cancelled_reason' => $request->reason
+                'cancelled_reason' => $request->reason ?: 'Dibatalkan oleh pelanggan'
             ]);
 
+            $payment = $booking->payment;
+            if ($payment && $payment->status === 'paid') {
+                $payment->update([
+                    'refund_requested' => true
+                ]);
+            }
+
             \App\Models\PushNotification::notifyAdmin(
-                'booking_cancelled',
-                'Booking Dibatalkan',
-                "Pemesanan {$booking->booking_code} telah dibatalkan oleh pelanggan.",
+                'refund_requested',
+                'Permintaan Refund',
+                "Pelanggan membatalkan pemesanan {$booking->booking_code} dan meminta pengembalian dana sebesar Rp " . number_format($booking->total_amount, 0, ',', '.') . ".",
                 ['booking_id' => $booking->id]
             );
 
@@ -287,7 +294,7 @@ class BookingController extends Controller
         }
 
         return response()->json([
-            'message' => 'Booking dibatalkan'
+            'message' => 'Booking dibatalkan dan permintaan refund telah dikirim ke admin.'
         ]);
     }
 

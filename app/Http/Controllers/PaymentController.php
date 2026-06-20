@@ -92,9 +92,35 @@ class PaymentController extends Controller
     {
         if ($payment->status !== 'paid')
             return back()->with('error','Hanya pembayaran berstatus "paid" yang dapat di-refund.');
-        $payment->update(['status'=>'refunded','refund_amount'=>$payment->amount,'refunded_at'=>now()]);
-        $payment->booking?->update(['status'=>'cancelled','cancelled_reason'=>'Refund oleh admin']);
-        return back()->with('success','Refund berhasil diproses.');
+
+        $payment->update([
+            'status' => 'refunded',
+            'refund_amount' => $payment->amount,
+            'refunded_at' => now(),
+            'refund_requested' => false
+        ]);
+
+        $payment->booking?->update([
+            'status' => 'cancelled',
+            'cancelled_reason' => $payment->booking->cancelled_reason ?: 'Refund oleh admin'
+        ]);
+
+        if ($payment->booking && $payment->booking->customer) {
+            $customer = $payment->booking->customer;
+            try {
+                $client = new \GuzzleHttp\Client();
+                $client->post('https://onopay.web.id/api/v1/payment/topup', [
+                    'json' => [
+                        'phone_number' => $customer->phone,
+                        'amount' => $payment->amount
+                    ]
+                ]);
+            } catch (\Exception $e) {
+                \Log::error('OnoPay Auto-Refund failed for ' . $customer->phone . ': ' . $e->getMessage());
+            }
+        }
+
+        return back()->with('success', 'Refund berhasil diproses dan saldo pelanggan telah dikembalikan.');
     }
 
     public function confirm(Payment $payment)

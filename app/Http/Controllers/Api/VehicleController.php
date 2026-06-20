@@ -58,8 +58,8 @@ public function update(
 ) {
 
     if (
-        $vehicle->customer_id !==
-        $request->user()->id
+        (int) $vehicle->customer_id !==
+        (int) $request->user()->id
     ) {
         return response()->json([
             'message' => 'Unauthorized'
@@ -99,8 +99,8 @@ public function update(
     ) {
 
         if (
-            $vehicle->customer_id !==
-            $request->user()->id
+            (int) $vehicle->customer_id !==
+            (int) $request->user()->id
         ) {
             return response()->json([
                 'message' => 'Unauthorized'
