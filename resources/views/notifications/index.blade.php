@@ -22,7 +22,8 @@
 
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
         @forelse($notifications as $n)
-        <div class="p-5 flex items-start gap-4 hover:bg-slate-50/50 transition-colors {{ !$n->is_read ? 'bg-slate-50/30' : '' }}">
+        <div class="p-5 flex items-start gap-4 hover:bg-slate-50/55 transition-colors cursor-pointer {{ !$n->is_read ? 'bg-slate-50/30' : '' }}"
+             @click="handleNotificationClick('{{ $n->id }}', '{{ isset($n->data['booking_id']) ? url('/bookings/' . $n->data['booking_id']) : (isset($n->data['customer_id']) ? url('/customers/' . $n->data['customer_id']) : '') }}')">
             <div class="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 {{ !$n->is_read ? 'bg-red-500' : 'bg-slate-200' }}"></div>
             
             <div class="flex-1 space-y-1">
@@ -36,7 +37,7 @@
 
             @if(!$n->is_read)
             <button type="button"
-                    @click="markAsRead('{{ $n->id }}')"
+                    @click.stop="markAsRead('{{ $n->id }}')"
                     class="text-xs text-blue-600 hover:underline font-medium flex-shrink-0">
                 Tandai dibaca
             </button>
@@ -82,6 +83,25 @@ function notificationPage() {
                 }
             } catch (e) {
                 console.error(e);
+            }
+        },
+        async handleNotificationClick(id, redirectUrl) {
+            try {
+                await fetch(`/notifications/${id}/read`, {
+                    method: 'PATCH',
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+            } catch (e) {
+                console.error(e);
+            }
+            if (redirectUrl) {
+                window.location.href = redirectUrl;
+            } else {
+                window.location.reload();
             }
         },
         async markAllAsRead() {

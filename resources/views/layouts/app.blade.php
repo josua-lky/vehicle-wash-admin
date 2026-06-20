@@ -213,10 +213,7 @@
                             this.unreadCount = data.count;
                             this.notifications = data.notifications;
                         } catch (e) {
-                            console.error('Failed fetching notifications', e);
-                        }
-                    },
-                    async markAsRead(id) {
+                                  async markAsRead(id) {
                         try {
                             await fetch(`/notifications/${id}/read`, {
                                 method: 'PATCH',
@@ -229,6 +226,28 @@
                         } catch (e) {
                             console.error(e);
                         }
+                    },
+                    async handleNotificationClick(n) {
+                        try {
+                            await fetch(`/notifications/${n.id}/read`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=&quot;csrf-token&quot;]').content,
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                        } catch (e) {
+                            console.error(e);
+                        }
+                        let url = '/notifications';
+                        if (n.data) {
+                            if (n.data.booking_id) {
+                                url = `/bookings/${n.data.booking_id}`;
+                            } else if (n.data.customer_id) {
+                                url = `/customers/${n.data.customer_id}`;
+                            }
+                        }
+                        window.location.href = url;
                     },
                     async markAllAsRead() {
                         try {
@@ -251,7 +270,7 @@
                         </svg>
                         <span x-show="unreadCount > 0" class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" x-cloak></span>
                     </button>
-
+ 
                     <div x-show="open" @click.away="open = false" x-cloak class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden">
                         <div class="px-4 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50">
                             <span class="text-xs font-semibold text-slate-700">Notifikasi (<span x-text="unreadCount"></span>)</span>
@@ -259,7 +278,7 @@
                         </div>
                         <div class="max-h-72 overflow-y-auto divide-y divide-slate-50">
                             <template x-for="n in notifications" :key="n.id">
-                                <div class="p-3 hover:bg-slate-50 flex flex-col gap-0.5 cursor-pointer" @click="markAsRead(n.id)">
+                                <div class="p-3 hover:bg-slate-50 flex flex-col gap-0.5 cursor-pointer" @click="handleNotificationClick(n)">
                                     <div class="flex justify-between items-start">
                                         <span class="text-[11px] font-bold text-slate-700" x-text="n.title"></span>
                                         <span class="text-[9px] text-slate-400" x-text="new Date(n.created_at).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})"></span>
