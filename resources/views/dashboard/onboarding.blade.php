@@ -507,8 +507,8 @@
                         "Praktis banget! Tinggal booking dari kantor pagi hari, pas pulang mobil udah bersih mengkilap di garasi rumah. Teknisinya sopan dan profesional."
                     </p>
                     <div>
-                        <p class="font-extrabold text-slate-800 text-xs">Budi Santoso</p>
-                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Jakarta Selatan</p>
+                        <p class="font-extrabold text-slate-800 text-xs">Riston</p>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Medan</p>
                     </div>
                 </div>
 
@@ -520,7 +520,7 @@
                     </p>
                     <div>
                         <p class="font-extrabold text-slate-800 text-xs">Susi Handayani</p>
-                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Sawangan, Depok</p>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Medan</p>
                     </div>
                 </div>
 
@@ -532,7 +532,7 @@
                     </p>
                     <div>
                         <p class="font-extrabold text-slate-800 text-xs">Galih Prakoso</p>
-                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Bekasi Barat</p>
+                        <p class="text-[9px] text-slate-400 uppercase tracking-wider">Medan</p>
                     </div>
                 </div>
             </div>
