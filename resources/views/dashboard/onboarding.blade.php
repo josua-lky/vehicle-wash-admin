@@ -14,7 +14,7 @@
             <div class="lg:col-span-7 space-y-6 text-left">
                 <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-accent/15 text-accent border border-accent/20">
                     <span class="w-1.5 h-1.5 rounded-full bg-accent animate-pulse"></span>
-                    Layanan Cuci Kendaraan Nomor 1 di Indonesia
+                    Layanan Cuci Kendaraan Nomor 1 di Medan
                 </div>
                 <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight leading-tight">
                     Cuci Kendaraan <span class="text-accent">Tanpa Antre</span>,<br class="hidden sm:inline"> Langsung dari Rumah Anda
@@ -109,7 +109,7 @@
     <section class="bg-white border-b border-slate-200 py-8 px-6 shadow-sm">
         <div class="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             <div class="space-y-1">
-                <h3 class="text-3xl font-extrabold text-indigo-950">24.500+</h3>
+                <h3 class="text-3xl font-extrabold text-indigo-950">100+</h3>
                 <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Total Booking Sukses</p>
             </div>
             <div class="space-y-1 border-l border-slate-100">
@@ -117,11 +117,11 @@
                 <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Rating Kepuasan</p>
             </div>
             <div class="space-y-1 border-l border-slate-100">
-                <h3 class="text-3xl font-extrabold text-indigo-950">150+</h3>
-                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Teknisi Profesional</p>
+                <h3 class="text-3xl font-extrabold text-indigo-950">Teknisi</h3>
+                <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Andal dan profesional</p>
             </div>
             <div class="space-y-1 border-l border-slate-100">
-                <h3 class="text-3xl font-extrabold text-indigo-950">6 Outlet</h3>
+                <h3 class="text-3xl font-extrabold text-indigo-950">2+ Outlet</h3>
                 <p class="text-xs text-slate-500 font-bold uppercase tracking-wider">Cakupan Wilayah</p>
             </div>
         </div>
@@ -385,7 +385,7 @@
                         <p class="text-xs text-slate-500">Pembersihan luar kendaraan standar cepat</p>
                     </div>
                     <div class="pt-2">
-                        <span class="text-3xl font-black text-indigo-950">Rp 40k - 60k</span>
+                        <span class="text-3xl font-black text-indigo-950">Rp 20k - 50k</span>
                         <span class="text-xs text-slate-400">/ pengerjaan</span>
                     </div>
                     <ul class="space-y-2.5 text-xs text-slate-600 flex-1">
@@ -410,7 +410,7 @@
                         <p class="text-xs text-slate-500">Pembersihan mendalam bodi & velg detail</p>
                     </div>
                     <div class="pt-2">
-                        <span class="text-3xl font-black text-indigo-950">Rp 80k - 100k</span>
+                        <span class="text-3xl font-black text-indigo-950">Rp 50k - 80k</span>
                         <span class="text-xs text-slate-400">/ pengerjaan</span>
                     </div>
                     <ul class="space-y-2.5 text-xs text-slate-600 flex-1">
@@ -432,7 +432,7 @@
                         <p class="text-xs text-slate-500">Restorasi kaca, jamur bodi, & interior lengkap</p>
                     </div>
                     <div class="pt-2">
-                        <span class="text-3xl font-black text-indigo-950">Rp 250k - 350k</span>
+                        <span class="text-3xl font-black text-indigo-950">Rp 80k - 120k</span>
                         <span class="text-xs text-slate-400">/ pengerjaan</span>
                     </div>
                     <ul class="space-y-2.5 text-xs text-slate-600 flex-1">
@@ -455,31 +455,36 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
             {{-- Left: Text (5 Cols) --}}
             <div class="lg:col-span-5 space-y-6 text-left">
-                <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">Area Cakupan Jasa</h2>
-                <p class="text-slate-500 text-xs md:text-sm leading-relaxed">
-                    Saat ini kami memiliki outlet resmi yang melayani pemesanan langsung dari rumah Anda di seluruh wilayah **Jabodetabek**.
-                </p>
-                <div class="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> DKI Jakarta</div>
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> Depok</div>
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> Bekasi</div>
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> Bogor</div>
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> Tangerang</div>
-                    <div class="flex items-center gap-2"><span class="text-accent">✔</span> Tangerang Selatan</div>
-                </div>
-            </div>
+            <h2 class="text-3xl font-extrabold text-slate-800 tracking-tight">
+                Area Cakupan Jasa
+            </h2>
 
-            {{-- Right: Map Placeholder (7 Cols) --}}
-            <div class="lg:col-span-7 bg-white rounded-2xl p-4 border border-slate-200 shadow-sm relative overflow-hidden h-72 flex items-center justify-center">
-                <img 
-                  alt="Area Cakupan" 
-                  class="absolute inset-0 w-full h-full object-cover opacity-60" 
-                  src="https://lh3.googleusercontent.com/aida-public/AB6AXuAoT_bi4TGBil9L4lh9pXrca55hxJkhF6TWz1yoWGmPNO80rkvXA4cGaKOc4wKgMpU4jo_9C-bDZUV96ZKfokNHkybGeo92nETzCi2WAQnIzSPRWWPBt4Perokyh5qhUh5nW-bVV_SRmSbC2pi_caOvTTifLidYzmwXDjvwnOIFmeWUw6QDGMiGFbPvTqNczbYsZEOMIkIX5kUMkWUdaflLMk3mZBE4d3O133qttLN0fO7Rqz0H7wsBPTl2zG9QyQqKEKDGxj3jJzOG"
-                />
-                <div class="relative z-10 bg-slate-900/90 text-white p-4 rounded-xl text-center max-w-xs border border-white/10 shadow-lg">
-                    <p class="font-extrabold text-sm text-accent">Jabodetabek Terkoneksi</p>
-                    <p class="text-[10px] text-slate-300 mt-1">Kami terus berekspansi untuk menjangkau lebih banyak wilayah guna memenuhi kebutuhan Anda.</p>
-                </div>
+            <p class="text-slate-500 text-xs md:text-sm leading-relaxed">
+                Saat ini layanan kami tersedia untuk wilayah <strong>Kota Medan</strong> dan sekitarnya.
+                Tim teknisi siap melayani pencucian kendaraan langsung ke lokasi pelanggan
+                maupun di outlet resmi kami.
+            </p>
+
+            <div class="grid grid-cols-2 gap-4 text-xs font-bold text-slate-700">
+                <div class="flex items-center gap-2">✔ Medan Kota</div>
+                <div class="flex items-center gap-2">✔ Medan Baru</div>
+                <div class="flex items-center gap-2">✔ Medan Sunggal</div>
+                <div class="flex items-center gap-2">✔ Medan Johor</div>
+                <div class="flex items-center gap-2">✔ Medan Selayang</div>
+                <div class="flex items-center gap-2">✔ Medan Denai</div>
+            </div>
+        </div>
+
+            {{-- Right: Map Medan (7 Cols) --}}
+            <div class="lg:col-span-7 bg-white rounded-2xl p-2 border border-slate-200 shadow-sm overflow-hidden h-72">
+                <iframe
+                    src="https://maps.google.com/maps?q=Medan,%20Sumatera%20Utara&t=&z=11&ie=UTF8&iwloc=&output=embed"
+                    width="100%"
+                    height="100%"
+                    style="border:0;"
+                    allowfullscreen=""
+                    loading="lazy">
+                </iframe>
             </div>
         </div>
     </section>
