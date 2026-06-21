@@ -19,6 +19,13 @@ class Outlet extends Model
     public function slots()       { return $this->hasMany(WashSlot::class); }
     public function bookings()    { return $this->hasMany(Booking::class); }
     public function packages()    { return $this->belongsToMany(Package::class, 'outlet_packages'); }
+    public function reviews()     { return $this->hasMany(Review::class); }
+
+    public function updateRating()
+    {
+        $avg = $this->reviews()->whereNotNull('outlet_rating')->avg('outlet_rating');
+        $this->update(['rating' => $avg ? round($avg, 2) : 0.00]);
+    }
 
     public function getAvailableSlotsForDate(string $date)
     {

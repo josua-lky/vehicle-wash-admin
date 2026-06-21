@@ -39,8 +39,9 @@ class PaymentController extends Controller
             $revenueData[] = (float)($monthlyRevenue[$m] ?? 0);
         }
 
-        // Quick Payouts (50% commission for completed bookings)
+        // Gaji Teknisi (35% home, 25% outlet/loket) where salary_paid = false
         $payouts = Booking::where('status', 'completed')
+            ->where('salary_paid', false)
             ->whereNotNull('technician_id')
             ->with('technician')
             ->get()
@@ -49,8 +50,10 @@ class PaymentController extends Controller
             ->map(function ($bookings) {
                 $tech = $bookings->first()->technician;
                 $ordersCount = $bookings->count();
-                $totalAmount = $bookings->sum('total_amount');
-                $payoutAmount = $totalAmount * 0.5;
+                $payoutAmount = $bookings->sum(function ($b) {
+                    $pct = $b->service_type === 'home' ? 0.35 : 0.25;
+                    return $b->total_amount * $pct;
+                });
 
                 return [
                     'technician_id' => $tech->id,
@@ -62,7 +65,6 @@ class PaymentController extends Controller
             })
             ->values()
             ->sortByDesc('payout_amount')
-            ->take(5)
             ->toArray();
 
         // Payment method breakdown (Only OnoPay is used)
@@ -215,6 +217,66 @@ class PaymentController extends Controller
 
     public function processPayouts(Request $request)
     {
-        return back()->with('success', 'Semua pembayaran komisi teknisi (payouts) berhasil diproses!');
+        // Get all completed bookings where salary_paid is false
+        $bookings = Booking::where('status', 'completed')
+            ->where('salary_paid', false)
+            ->whereNotNull('technician_id')
+            ->with('technician')
+            ->get()
+            ->filter(fn($b) => !is_null($b->technician));
+
+        if ($bookings->isEmpty()) {
+            return back()->with('error', 'Tidak ada gaji teknisi yang perlu dibayarkan.');
+        }
+
+        $payoutData = [];
+        $bookingIds = $bookings->pluck('id')->toArray();
+
+        foreach ($bookings as $b) {
+            $techId = $b->technician_id;
+            if (!isset($payoutData[$techId])) {
+                $payoutData[$techId] = [
+                    'name' => $b->technician->name,
+                    'email' => $b->technician->email,
+                    'phone' => $b->technician->phone,
+                    'home_orders' => 0,
+                    'outlet_orders' => 0,
+                    'home_amount' => 0,
+                    'outlet_amount' => 0,
+                    'total_salary' => 0,
+                ];
+            }
+
+            if ($b->service_type === 'home') {
+                $payoutData[$techId]['home_orders']++;
+                $payoutData[$techId]['home_amount'] += $b->total_amount;
+                $payoutData[$techId]['total_salary'] += $b->total_amount * 0.35;
+            } else {
+                $payoutData[$techId]['outlet_orders']++;
+                $payoutData[$techId]['outlet_amount'] += $b->total_amount;
+                $payoutData[$techId]['total_salary'] += $b->total_amount * 0.25;
+            }
+        }
+
+        // Mark bookings as salary_paid = true
+        Booking::whereIn('id', $bookingIds)->update(['salary_paid' => true]);
+
+        // Put payout data in session for print view
+        session()->put('payout_slip_data', [
+            'payouts' => array_values($payoutData),
+            'printed_at' => now()->format('d M Y, H:i') . ' WIB',
+            'invoice_code' => 'SLIP-GAJI-' . strtoupper(\Illuminate\Support\Str::random(6)),
+        ]);
+
+        return redirect()->route('payments.payout-slip');
+    }
+
+    public function payoutSlip()
+    {
+        $data = session()->get('payout_slip_data');
+        if (!$data) {
+            return redirect()->route('payments.index')->with('error', 'Tidak ada data slip gaji yang dapat dicetak.');
+        }
+        return view('payments.payout-slip', compact('data'));
     }
 }

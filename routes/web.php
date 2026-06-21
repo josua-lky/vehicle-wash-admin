@@ -109,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/',             [PaymentController::class, 'index'])->name('index');
         Route::get('/export',       [PaymentController::class, 'export'])->name('export');
         Route::post('/process-payouts', [PaymentController::class, 'processPayouts'])->name('processPayouts');
+        Route::get('/payout-slip',  [PaymentController::class, 'payoutSlip'])->name('payout-slip');
         Route::get('/{payment}',    [PaymentController::class, 'show'])->name('show');
         Route::patch('/{payment}/refund',  [PaymentController::class, 'refund'])->name('refund');
         Route::patch('/{payment}/confirm', [PaymentController::class, 'confirm'])->name('confirm');

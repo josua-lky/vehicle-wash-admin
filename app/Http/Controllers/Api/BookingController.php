@@ -20,7 +20,8 @@ class BookingController extends Controller
             'vehicle',
             'promo',
             'technician',
-            'review'
+            'review',
+            'outlet'
         ])
 
         ->where(
@@ -238,13 +239,12 @@ class BookingController extends Controller
         $customer = $request->user();
 
         $booking = Booking::with([
-
             'package',
             'payment',
             'review',
             'vehicle',
-            'technician'
-
+            'technician',
+            'outlet'
         ])
 
         ->where(
@@ -314,6 +314,7 @@ class BookingController extends Controller
         
         $validated = $request->validate([
             'rating' => 'required|integer|min:1|max:5',
+            'outlet_rating' => 'nullable|integer|min:1|max:5',
             'comment' => 'nullable|string'
         ]);
         
@@ -321,21 +322,27 @@ class BookingController extends Controller
             'booking_id' => $booking->id,
             'customer_id' => $customer->id,
             'technician_id' => $booking->technician_id,
+            'outlet_id' => $booking->outlet_id,
             'rating' => $validated['rating'],
+            'outlet_rating' => ($booking->service_type === 'outlet' || !empty($booking->outlet_id)) ? ($validated['outlet_rating'] ?? $validated['rating']) : null,
             'comment' => $validated['comment'] ?? null
         ]);
 
-        if ($review->rating < 3) {
+        if ($review->rating < 3 || ($review->outlet_rating !== null && $review->outlet_rating < 3)) {
             \App\Models\PushNotification::notifyAdmin(
                 'bad_rating',
                 'Rating Buruk',
-                "Rating buruk ({$review->rating} bintang) diterima dari pelanggan {$customer->name} untuk pemesanan {$booking->booking_code}.",
+                "Rating buruk diterima dari pelanggan {$customer->name} untuk pemesanan {$booking->booking_code}.",
                 ['booking_id' => $booking->id, 'review_id' => $review->id]
             );
         }
         
         if ($booking->technician) {
             $booking->technician->updateRating();
+        }
+
+        if ($booking->outlet) {
+            $booking->outlet->updateRating();
         }
         
         return response()->json([

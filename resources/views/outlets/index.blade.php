@@ -59,7 +59,7 @@
                 $outOpen = $outlet->open_time ? substr($outlet->open_time, 0, 5) : '08:00';
                 $outClose = $outlet->close_time ? substr($outlet->close_time, 0, 5) : '17:00';
                 $outTechnicians = $outlet->technicians_count ?? $outlet->technicians()->count();
-                $outRating = 4.8;
+                $outRating = $outlet->rating > 0 ? number_format($outlet->rating, 1) : '0.0';
                 $outTodayOrders = $outlet->today_bookings_count ?? $outlet->bookings()->whereDate('scheduled_at', today())->count();
                 $outCapacity = $outlet->capacity_per_hour;
             }

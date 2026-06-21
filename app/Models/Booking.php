@@ -29,7 +29,7 @@ class Booking extends Model
         'scheduled_at','status','promo_id',
         'subtotal','discount_amount','total_amount',
         'package_id','notes','cancelled_reason','completed_at',
-        'before_photo', 'after_photo',
+        'before_photo', 'after_photo', 'salary_paid',
     ];
 
     protected $casts = [
@@ -40,6 +40,7 @@ class Booking extends Model
         'total_amount'  => 'decimal:2',
         'latitude'      => 'decimal:8',
         'longitude'     => 'decimal:8',
+        'salary_paid'   => 'boolean',
     ];
 
     public function customer()   { return $this->belongsTo(Customer::class); }

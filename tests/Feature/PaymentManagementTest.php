@@ -49,11 +49,34 @@ class PaymentManagementTest extends TestCase
             'role' => 'super_admin'
         ]);
 
+        $tech = \App\Models\Technician::first() ?? \App\Models\Technician::create([
+            'name' => 'Budi Teknisi Test',
+            'email' => 'budi.test.tech@example.com',
+            'phone' => '081234567891',
+            'status' => 'active',
+            'join_date' => now(),
+        ]);
+        $cust = Customer::first() ?? Customer::factory()->create();
+
+        $booking = Booking::create([
+            'booking_code' => 'VW-TEST-PAYOUT-1',
+            'customer_id' => $cust->id,
+            'technician_id' => $tech->id,
+            'scheduled_at' => now(),
+            'status' => 'completed',
+            'subtotal' => 100000,
+            'total_amount' => 100000,
+            'service_type' => 'home',
+            'salary_paid' => false,
+        ]);
+
         $response = $this->actingAs($user)
             ->post('/payments/process-payouts');
 
         $response->assertStatus(302);
-        $response->assertSessionHas('success', 'Semua pembayaran komisi teknisi (payouts) berhasil diproses!');
+        $response->assertRedirect('/payments/payout-slip');
+        $response->assertSessionHas('payout_slip_data');
+        $this->assertTrue((bool)$booking->fresh()->salary_paid);
     }
 
     public function test_admin_can_view_payment_details()

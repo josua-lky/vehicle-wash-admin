@@ -81,7 +81,11 @@ use App\Models\Technician;
 use App\Models\Promo;
 
 Route::get('/outlets', function() {
-    return response()->json(Outlet::where('status', 'active')->get());
+    return response()->json(Outlet::where('status', 'active')
+        ->withCount(['reviews' => function($query) {
+            $query->whereNotNull('outlet_rating');
+        }])
+        ->get());
 });
 
 Route::get('/technicians', function() {
@@ -90,9 +94,36 @@ Route::get('/technicians', function() {
             $query->whereNotIn('status', ['cancelled', 'completed'])
                   ->select('id', 'technician_id', 'scheduled_at', 'status');
         }])
+        ->withCount('reviews')
         ->get());
 });
 
-Route::get('/promos', function() {
-    return response()->json(Promo::where('status', 'active')->get());
+Route::get('/promos', function(\Illuminate\Http\Request $request) {
+    $customer = $request->user('sanctum');
+    $promos = Promo::where('status', 'active')->get();
+    if ($customer) {
+        foreach ($promos as $promo) {
+            $usageCount = \App\Models\PromoUsage::where('customer_id', $customer->id)
+                ->where('promo_id', $promo->id)
+                ->count();
+            $promo->has_exceeded_limit = $usageCount >= ($promo->max_usage_per_user ?? 1);
+
+            if (str_contains(strtoupper($promo->code), 'FIRST') || 
+                str_contains(strtolower($promo->description), 'baru') || 
+                str_contains(strtolower($promo->description), 'pertama')) {
+                $hasBookings = \App\Models\Booking::where('customer_id', $customer->id)
+                    ->where('status', '!=', 'cancelled')
+                    ->exists();
+                $promo->is_not_new_customer = $hasBookings;
+            } else {
+                $promo->is_not_new_customer = false;
+            }
+        }
+    } else {
+        foreach ($promos as $promo) {
+            $promo->has_exceeded_limit = false;
+            $promo->is_not_new_customer = false;
+        }
+    }
+    return response()->json($promos);
 });

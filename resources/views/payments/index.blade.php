@@ -58,16 +58,16 @@
             </div>
         </div>
 
-        {{-- Quick Payouts --}}
+        {{-- Gaji Teknisi --}}
         <div class="space-y-4">
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <div class="flex items-center gap-2 mb-4">
                     <div class="w-9 h-9 rounded-xl flex items-center justify-center" style="background:#FEF9EC;">
-                        <svg class="w-5 h-5" style="color:#F0C419;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        <svg class="w-5 h-5" style="color:#F0C419;" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 002 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                     </div>
-                    <h3 class="font-semibold text-slate-800 text-sm">Quick Payouts</h3>
+                    <h3 class="font-semibold text-slate-800 text-sm">Gaji Teknisi</h3>
                 </div>
-                <p class="text-xs text-slate-500 mb-4">Proses pembayaran teknisi yang pending segera untuk menjaga kepercayaan tim.</p>
+                <p class="text-xs text-slate-500 mb-4">Perhitungan gaji teknisi aktif yang belum dibayarkan (Rumah: 35%, Loket/Outlet: 25% dari total per booking).</p>
                 <div class="space-y-2 mb-4">
                     @forelse($payouts ?? [] as $p)
                     <div class="flex items-center justify-between py-2 border-b border-slate-50 last:border-0">
@@ -81,25 +81,25 @@
                             </div>
                             <div>
                                 <p class="text-xs font-medium text-slate-700">{{ $p['name'] }}</p>
-                                <p class="text-xs text-slate-400">{{ $p['orders_count'] }} order selesai</p>
+                                <p class="text-xs text-slate-400">{{ $p['orders_count'] }} booking selesai</p>
                             </div>
                         </div>
-                        <span class="text-xs font-semibold" style="color:#F0C419;">Rp {{ number_format($p['payout_amount'], 0, ',', '.') }}</span>
+                        <span class="text-xs font-semibold text-emerald-600">Rp {{ number_format($p['payout_amount'], 0, ',', '.') }}</span>
                     </div>
                     @empty
-                    <p class="text-xs text-slate-400 text-center py-4">Tidak ada payout tertunda.</p>
+                    <p class="text-xs text-slate-400 text-center py-4">Semua gaji teknisi sudah dibayarkan.</p>
                     @endforelse
                 </div>
                 @if(count($payouts ?? []) > 0)
                 <form action="/payments/process-payouts" method="POST">
                     @csrf
-                    <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-900 active:scale-95 transition-all" style="background:#F0C419;">
-                        Process All Payouts
+                    <button type="submit" class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-900 active:scale-95 transition-all cursor-pointer" style="background:#F0C419;">
+                        Cetak Slip & Bayar Gaji
                     </button>
                 </form>
                 @else
-                <button disabled class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-400 bg-slate-100 cursor-not-allowed">
-                    No Payouts to Process
+                <button disabled class="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-400 bg-slate-100 cursor-not-allowed border-none">
+                    Tidak Ada Gaji untuk Diproses
                 </button>
                 @endif
             </div>
