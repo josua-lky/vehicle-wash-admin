@@ -194,4 +194,78 @@ class PaymentManagementTest extends TestCase
         $newNotifCount = \App\Models\PushNotification::where('type', 'refund_requested')->count();
         $this->assertEquals($initialNotifCount + 1, $newNotifCount);
     }
+
+    public function test_payment_index_payouts_works_when_technician_is_deleted()
+    {
+        $user = User::first() ?? User::factory()->create([
+            'role' => 'super_admin'
+        ]);
+
+        $connection = \Illuminate\Support\Facades\DB::connection();
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->statement('PRAGMA foreign_keys = OFF;');
+        } else {
+            $connection->statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
+
+        $booking = Booking::create([
+            'booking_code' => 'VW-DEL-TECH-B',
+            'customer_id' => Customer::first()->id,
+            'scheduled_at' => now(),
+            'status' => 'completed',
+            'subtotal' => 50000,
+            'total_amount' => 50000,
+            'technician_id' => 99999, // Non-existent/deleted technician
+        ]);
+
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->statement('PRAGMA foreign_keys = ON;');
+        } else {
+            $connection->statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+
+        $response = $this->actingAs($user)
+            ->get('/payments');
+
+        $response->assertStatus(200);
+        $payouts = $response->viewData('payouts');
+        $this->assertIsArray($payouts);
+    }
+
+    public function test_payment_export_works_when_booking_is_deleted()
+    {
+        $user = User::first() ?? User::factory()->create([
+            'role' => 'super_admin'
+        ]);
+
+        $connection = \Illuminate\Support\Facades\DB::connection();
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->statement('PRAGMA foreign_keys = OFF;');
+        } else {
+            $connection->statement('SET FOREIGN_KEY_CHECKS=0;');
+        }
+
+        $payment = Payment::create([
+            'booking_id' => 99999, // Non-existent booking
+            'payment_method' => 'ewallet',
+            'amount' => 50000,
+            'status' => 'paid',
+        ]);
+
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->statement('PRAGMA foreign_keys = ON;');
+        } else {
+            $connection->statement('SET FOREIGN_KEY_CHECKS=1;');
+        }
+
+        // Test export CSV
+        $responseExport = $this->actingAs($user)
+            ->get('/payments/export?format=excel');
+        $responseExport->assertStatus(200);
+
+        // Test print PDF
+        $responsePrint = $this->actingAs($user)
+            ->get('/payments/export?format=pdf');
+        $responsePrint->assertStatus(200);
+    }
 }

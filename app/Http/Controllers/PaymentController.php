@@ -44,6 +44,7 @@ class PaymentController extends Controller
             ->whereNotNull('technician_id')
             ->with('technician')
             ->get()
+            ->filter(fn($b) => !is_null($b->technician))
             ->groupBy('technician_id')
             ->map(function ($bookings) {
                 $tech = $bookings->first()->technician;
@@ -100,10 +101,12 @@ class PaymentController extends Controller
             'refund_requested' => false
         ]);
 
-        $payment->booking?->update([
-            'status' => 'cancelled',
-            'cancelled_reason' => $payment->booking->cancelled_reason ?: 'Refund oleh admin'
-        ]);
+        if ($payment->booking) {
+            $payment->booking->update([
+                'status' => 'cancelled',
+                'cancelled_reason' => $payment->booking->cancelled_reason ?: 'Refund oleh admin'
+            ]);
+        }
 
         if ($payment->booking && $payment->booking->customer) {
             $customer = $payment->booking->customer;
@@ -195,8 +198,8 @@ class PaymentController extends Controller
             foreach ($payments as $payment) {
                 fputcsv($file, [
                     $payment->id,
-                    $payment->booking->booking_code ?? '—',
-                    $payment->booking->customer->name ?? '—',
+                    $payment->booking?->booking_code ?? '—',
+                    $payment->booking?->customer?->name ?? '—',
                     $payment->amount,
                     $payment->payment_method ?? '—',
                     $payment->status,

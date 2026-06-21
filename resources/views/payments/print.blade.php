@@ -84,8 +84,8 @@
                     @foreach($payments as $p)
                     <tr class="hover:bg-slate-50/50">
                         <td class="py-3 px-4 font-semibold text-slate-800">#{{ $p->id }}</td>
-                        <td class="py-3 px-4 font-medium text-slate-600">{{ $p->booking->booking_code ?? '—' }}</td>
-                        <td class="py-3 px-4 text-slate-600">{{ $p->booking->customer->name ?? '—' }}</td>
+                        <td class="py-3 px-4 font-medium text-slate-600">{{ $p->booking?->booking_code ?? '—' }}</td>
+                        <td class="py-3 px-4 text-slate-600">{{ $p->booking?->customer?->name ?? '—' }}</td>
                         <td class="py-3 px-4 font-bold text-slate-800">Rp {{ number_format($p->amount, 0, ',', '.') }}</td>
                         <td class="py-3 px-4 text-slate-600 capitalize">{{ $p->payment_method ?? '—' }}</td>
                         <td class="py-3 px-4">
