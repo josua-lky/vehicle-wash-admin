@@ -20,14 +20,17 @@ class OutletController extends Controller
         $today = today()->toDateString();
         
         // Calculate available slots across all active outlets today
-        $availableSlots = WashSlot::whereDate('slot_date', $today)
-            ->where('status', 'available')
-            ->whereHas('outlet', function ($q) {
-                $q->where('status', 'active');
-            })
+        // Formula: total jam buka sampai jam tutup tiap outlet dikalikan dengan total slot yang tersedia (capacity_per_hour)
+        $availableSlots = Outlet::where('status', 'active')
             ->get()
-            ->sum(function ($slot) {
-                return max(0, $slot->capacity - $slot->booked_count);
+            ->sum(function ($outlet) {
+                if (!$outlet->open_time || !$outlet->close_time) {
+                    return 0;
+                }
+                $open = \Carbon\Carbon::parse($outlet->open_time);
+                $close = \Carbon\Carbon::parse($outlet->close_time);
+                $hours = $close->diffInHours($open);
+                return $hours * $outlet->capacity_per_hour;
             });
 
         // Calculate average slot utilization across active outlets
@@ -35,9 +38,7 @@ class OutletController extends Controller
             $q->where('status', 'active');
         })->sum('booked_count');
 
-        $totalCapacity = WashSlot::whereHas('outlet', function ($q) {
-            $q->where('status', 'active');
-        })->sum('capacity');
+        $totalCapacity = $availableSlots;
 
         $utilization = $totalCapacity > 0 ? round(($totalBooked / $totalCapacity) * 100) : 0;
 

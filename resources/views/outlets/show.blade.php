@@ -43,6 +43,16 @@
                     <span class="font-medium text-slate-700">{{ $outlet->capacity_per_hour }} slot</span>
                 </div>
                 <div class="flex justify-between">
+                    <span class="text-slate-400">Slot Hari Ini</span>
+                    @php
+                        $open = \Carbon\Carbon::parse($outlet->open_time);
+                        $close = \Carbon\Carbon::parse($outlet->close_time);
+                        $hours = $close->diffInHours($open);
+                        $slotsToday = $outlet->status === 'active' ? ($hours * $outlet->capacity_per_hour) : 0;
+                    @endphp
+                    <span class="font-medium text-slate-700">{{ $slotsToday }} slot</span>
+                </div>
+                <div class="flex justify-between">
                     <span class="text-slate-400">Total Teknisi</span>
                     <span class="font-medium text-slate-700">{{ $outlet->technicians->count() }} teknisi</span>
                 </div>

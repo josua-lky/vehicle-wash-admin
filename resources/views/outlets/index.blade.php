@@ -96,8 +96,14 @@
                     <p class="text-xs text-slate-400">Order Hari Ini</p>
                 </div>
                 <div class="p-4 text-center">
-                    <p class="text-xl font-bold" style="color:#F0C419;">{{ $outCapacity }}</p>
-                    <p class="text-xs text-slate-400">Kapasitas/Jam</p>
+                    @php
+                        $open = \Carbon\Carbon::parse($outOpen);
+                        $close = \Carbon\Carbon::parse($outClose);
+                        $hours = $close->diffInHours($open);
+                        $slotsToday = $isActive ? ($hours * $outCapacity) : 0;
+                    @endphp
+                    <p class="text-xl font-bold" style="color:#F0C419;">{{ $slotsToday }}</p>
+                    <p class="text-xs text-slate-400">Slot Hari Ini</p>
                 </div>
             </div>
             {{-- Actions --}}

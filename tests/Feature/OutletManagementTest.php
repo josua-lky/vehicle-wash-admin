@@ -27,23 +27,23 @@ class OutletManagementTest extends TestCase
         $today = today()->toDateString();
 
         // Measure initial state due to pre-existing seed data
-        $initialAvailableSlots = WashSlot::whereDate('slot_date', $today)
-            ->where('status', 'available')
-            ->whereHas('outlet', function ($q) {
-                $q->where('status', 'active');
-            })
+        $initialAvailableSlots = Outlet::where('status', 'active')
             ->get()
-            ->sum(function ($slot) {
-                return max(0, $slot->capacity - $slot->booked_count);
+            ->sum(function ($outlet) {
+                if (!$outlet->open_time || !$outlet->close_time) {
+                    return 0;
+                }
+                $open = \Carbon\Carbon::parse($outlet->open_time);
+                $close = \Carbon\Carbon::parse($outlet->close_time);
+                $hours = $close->diffInHours($open);
+                return $hours * $outlet->capacity_per_hour;
             });
 
         $initialBooked = WashSlot::whereHas('outlet', function ($q) {
             $q->where('status', 'active');
         })->sum('booked_count');
 
-        $initialCapacity = WashSlot::whereHas('outlet', function ($q) {
-            $q->where('status', 'active');
-        })->sum('capacity');
+        $initialCapacity = $initialAvailableSlots;
 
         // Create active outlet
         $outlet = Outlet::create([
@@ -85,12 +85,12 @@ class OutletManagementTest extends TestCase
         $stats = $response->viewData('stats');
         $this->assertEquals($outlet->id, $response->viewData('outlets')->firstWhere('id', $outlet->id)->id);
         
-        // Expected available slots: initial + (4 - 1) = initial + 3
-        $this->assertEquals($initialAvailableSlots + 3, $stats['available_slots']);
+        // Expected available slots: initial + (14 * 4) = initial + 56
+        $this->assertEquals($initialAvailableSlots + 56, $stats['available_slots']);
         
         // Expected utilization calculation:
         $newBooked = $initialBooked + 5;
-        $newCapacity = $initialCapacity + 8;
+        $newCapacity = $initialCapacity + 56;
         $expectedUtilization = ($newCapacity > 0 ? round(($newBooked / $newCapacity) * 100) : 0) . '%';
         $this->assertEquals($expectedUtilization, $stats['utilization']);
     }
