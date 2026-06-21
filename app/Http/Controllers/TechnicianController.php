@@ -88,6 +88,9 @@ class TechnicianController extends Controller
             unset($data['password']);
         }
         $technician->update($data);
+        if ($technician->status === 'inactive') {
+            $technician->tokens()->delete();
+        }
         return back()->with('success', 'Data teknisi berhasil diperbarui.');
     }
 

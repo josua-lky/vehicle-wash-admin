@@ -9,7 +9,8 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
             Kembali ke Manajemen Pelanggan
         </a>
-        <form method="POST" action="/customers/{{ $customer->id }}/toggle-status">
+        <form method="POST" action="/customers/{{ $customer->id }}/toggle-status"
+              onsubmit="return confirm('Apakah Anda yakin ingin ' + ('{{ $customer->status }}' === 'active' ? 'menonaktifkan (blokir) pelanggan ini? Pelanggan yang diblokir tidak akan dapat menggunakan aplikasi.' : 'mengaktifkan pelanggan ini kembali?') )">
             @csrf @method('PATCH')
             <button type="submit" class="text-sm font-semibold px-4 py-2 rounded-lg border {{ $customer->status==='active'?'border-red-200 text-red-500 bg-red-50':'border-green-200 text-green-500 bg-green-50' }}">
                 {{ $customer->status==='active'?'Blokir Pelanggan':'Aktifkan Pelanggan' }}

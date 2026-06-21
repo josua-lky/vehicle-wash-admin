@@ -139,4 +139,32 @@ class VehicleManagementTest extends TestCase
         $response->assertStatus(422)
             ->assertJsonValidationErrors(['type']);
     }
+
+    public function test_inactive_customer_cannot_login()
+    {
+        $this->customer->update(['status' => 'inactive']);
+
+        $response = $this->postJson('/api/login', [
+            'email' => $this->customer->email,
+            'password' => 'password123'
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ]);
+    }
+
+    public function test_inactive_customer_is_blocked_from_fetching_vehicles()
+    {
+        $this->customer->update(['status' => 'inactive']);
+
+        $response = $this->actingAs($this->customer, 'sanctum')
+            ->getJson('/api/vehicles');
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Akun Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ]);
+    }
 }

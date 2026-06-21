@@ -138,7 +138,8 @@
                         <td class="px-4 py-4">
                             <div class="flex gap-1">
                                 <a href="/customers/{{ $cId }}" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Detail</a>
-                                <form method="POST" action="/customers/{{ $cId }}/toggle-status">
+                                <form method="POST" action="/customers/{{ $cId }}/toggle-status"
+                                      onsubmit="return confirm('Apakah Anda yakin ingin ' + ('{{ $cStatus }}' === 'active' ? 'menonaktifkan (blokir) pelanggan ini? Pelanggan yang diblokir tidak akan dapat menggunakan aplikasi.' : 'mengaktifkan pelanggan ini kembali?') )">
                                     @csrf @method('PATCH')
                                     <button type="submit" class="text-xs px-2.5 py-1.5 rounded-lg border {{ $cStatus==='active'?'border-red-200 text-red-500':'border-green-200 text-green-500' }}">
                                         {{ $cStatus==='active'?'Blokir':'Aktifkan' }}

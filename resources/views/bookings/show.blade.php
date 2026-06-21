@@ -174,9 +174,13 @@
                 <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Pelanggan</h4>
                 @if($booking->customer)
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white flex-shrink-0 overflow-hidden"
                          style="background:linear-gradient(135deg,#1B2337,#2D3D5E);">
-                        {{ strtoupper(substr($booking->customer->name, 0, 1)) }}
+                         @if($booking->customer->profile_photo)
+                             <img src="{{ $booking->customer->avatar }}" alt="avatar" class="w-full h-full object-cover">
+                         @else
+                             {{ strtoupper(substr($booking->customer->name, 0, 1)) }}
+                         @endif
                     </div>
                     <div>
                         <p class="font-semibold text-slate-800 text-sm">{{ $booking->customer->name }}</p>

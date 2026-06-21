@@ -28,6 +28,12 @@ class TechnicianAppController extends Controller
             ], 401);
         }
 
+        if ($technician->status === 'inactive') {
+            return response()->json([
+                'message' => 'Akun teknisi Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ], 403);
+        }
+
         $token = $technician->createToken('technician')->plainTextToken;
 
         return response()->json([
@@ -71,6 +77,8 @@ class TechnicianAppController extends Controller
                 $path = $request->file('before_photo')->store('bookings', 'public');
                 $updateData['before_photo'] = $path;
             }
+            // Update technician status to busy
+            $request->user()->update(['status' => 'busy']);
         } elseif ($validated['status'] === 'completed') {
             if ($request->hasFile('before_photo')) {
                 $path = $request->file('before_photo')->store('bookings', 'public');
@@ -81,6 +89,8 @@ class TechnicianAppController extends Controller
                 $updateData['after_photo'] = $path;
             }
             $updateData['completed_at'] = now();
+            // Update technician status to active
+            $request->user()->update(['status' => 'active']);
         }
 
         $booking->update($updateData);

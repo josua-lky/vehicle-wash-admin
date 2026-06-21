@@ -440,4 +440,32 @@ class TechnicianAppApiTest extends TestCase
         $this->assertEquals(5.0, $this->technician->fresh()->rating);
         $this->assertEquals(1, $this->technician->fresh()->total_orders);
     }
+
+    public function test_inactive_technician_cannot_login()
+    {
+        $this->technician->update(['status' => 'inactive']);
+
+        $response = $this->postJson('/api/technician/login', [
+            'email' => $this->technician->email,
+            'password' => 'secret123'
+        ]);
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Akun teknisi Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ]);
+    }
+
+    public function test_inactive_technician_is_blocked_from_fetching_bookings()
+    {
+        $this->technician->update(['status' => 'inactive']);
+
+        $response = $this->actingAs($this->technician, 'sanctum')
+            ->getJson('/api/technician/bookings');
+
+        $response->assertStatus(403)
+            ->assertJson([
+                'message' => 'Akun teknisi Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ]);
+    }
 }

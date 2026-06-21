@@ -187,6 +187,10 @@ class BookingController extends Controller
             return redirect('/bookings')->with('error', 'Pesanan harus dikonfirmasi terlebih dahulu sebelum diselesaikan.');
         }
         $booking->update(['status' => 'completed']);
+        if ($booking->technician) {
+            $booking->technician->update(['status' => 'active']);
+            $booking->technician->updateRating();
+        }
         return back()->with('success', "Booking {$booking->booking_code} berhasil diselesaikan.");
     }
 
@@ -218,6 +222,15 @@ class BookingController extends Controller
         }
         if ($booking->status !== 'cancelled') {
             $booking->update(['status' => 'cancelled', 'cancelled_reason' => $request->reason]);
+            if ($booking->technician && $booking->technician->status === 'busy') {
+                $hasOtherInProgress = Booking::where('technician_id', $booking->technician_id)
+                    ->where('status', 'in_progress')
+                    ->where('id', '!=', $booking->id)
+                    ->exists();
+                if (!$hasOtherInProgress) {
+                    $booking->technician->update(['status' => 'active']);
+                }
+            }
             \App\Models\PushNotification::notifyAdmin(
                 'booking_cancelled',
                 'Booking Dibatalkan',

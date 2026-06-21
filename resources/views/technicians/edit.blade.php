@@ -2,6 +2,16 @@
 @section('title', 'Edit Data Teknisi - ' . $technician->name)
 
 @section('content')
+<script>
+function confirmTechnicianStatusChange(form) {
+    const currentStatus = '{{ $technician->status }}';
+    const newStatus = form.status.value;
+    if (newStatus === 'inactive' && currentStatus !== 'inactive') {
+        return confirm('Apakah Anda yakin ingin menonaktifkan teknisi ini? Teknisi yang dinonaktifkan tidak akan dapat menggunakan aplikasi.');
+    }
+    return true;
+}
+</script>
 <div class="p-6 space-y-6">
     {{-- Back Link --}}
     <div class="flex items-center justify-between">
@@ -16,7 +26,7 @@
             <h3 class="font-bold text-slate-800">Edit Data Teknisi</h3>
             <p class="text-xs text-slate-400 mt-0.5">Ubah informasi profil dan area tugas teknisi.</p>
         </div>
-        <form method="POST" action="/technicians/{{ $technician->id }}" class="p-6 space-y-4">
+        <form method="POST" action="/technicians/{{ $technician->id }}" class="p-6 space-y-4" onsubmit="return confirmTechnicianStatusChange(this);">
             @csrf
             @method('PUT')
             

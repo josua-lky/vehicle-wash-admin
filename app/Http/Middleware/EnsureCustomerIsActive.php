@@ -28,6 +28,15 @@ class EnsureCustomerIsActive
             ], 403);
         }
 
+        if ($user instanceof \App\Models\Technician && $user->status === 'inactive') {
+            // Delete all technician active sessions to log them out completely
+            $user->tokens()->delete();
+
+            return response()->json([
+                'message' => 'Akun teknisi Anda telah dinonaktifkan. Silakan hubungi admin.'
+            ], 403);
+        }
+
         return $next($request);
     }
 }
