@@ -196,7 +196,14 @@ public function login(Request $request)
             if (str_contains($photo, 'ui-avatars.com')) {
                 $profilePhotoPath = null;
             } else {
-                $profilePhotoPath = $photo;
+                $isStorageFile = str_contains($photo, '/storage-file/');
+                $separator = $isStorageFile ? '/storage-file/' : '/storage/';
+                if (str_contains($photo, $separator)) {
+                    $parts = explode($separator, $photo);
+                    $profilePhotoPath = end($parts);
+                } else {
+                    $profilePhotoPath = $photo;
+                }
             }
         }
 
