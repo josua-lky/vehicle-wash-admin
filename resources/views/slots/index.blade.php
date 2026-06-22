@@ -91,76 +91,104 @@
         {{-- RIGHT: Time Slots --}}
         <div class="space-y-4">
 
-            {{-- Selected date info --}}
+            {{-- Selected date info & Hourly Slots Table --}}
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
                 <div class="flex items-center justify-between mb-4">
                     <div>
-                        <h3 class="font-semibold text-slate-800 text-sm">Slot Waktu Cuci</h3>
+                        <h3 class="font-semibold text-slate-800 text-sm">Slot & Jadwal Booking</h3>
                         <p class="text-xs text-slate-400 mt-0.5" x-text="selectedDay ? monthName+' '+selectedDay+', '+year : 'Pilih tanggal di kalender'"></p>
+                    </div>
+                    <template x-if="selectedOutlet">
+                        <button @click="selectedOutlet = ''; history.replaceState(null, '', '/slots')" class="text-xs font-semibold text-amber-600 hover:text-amber-700">Ubah Outlet</button>
+                    </template>
+                </div>
+
+                <div x-show="!selectedOutlet" class="space-y-4 py-2">
+                    <div class="p-4 bg-slate-50 border border-slate-100 rounded-xl text-center">
+                        <svg class="w-12 h-12 text-slate-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                        </svg>
+                        <h4 class="text-sm font-bold text-slate-700">Pilih Outlet Terlebih Dahulu</h4>
+                        <p class="text-xs text-slate-400 mt-1 max-w-[250px] mx-auto">Silakan pilih salah satu outlet di bawah ini untuk melihat jadwal slot secara mendetail.</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2.5">
+                        <template x-for="o in outlets" :key="o.id">
+                            <button @click="selectedOutlet = String(o.id); history.replaceState(null, '', '/slots?outlet_id=' + o.id)"
+                                    class="flex items-center justify-between p-3.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all text-left shadow-sm w-full">
+                                <div class="space-y-0.5">
+                                    <h5 class="font-bold text-slate-800 text-xs" x-text="o.name"></h5>
+                                    <div class="flex items-center gap-3 text-[11px] text-slate-500">
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            <span x-text="`${o.open_time.substring(0, 5)} - ${o.close_time.substring(0, 5)}`"></span>
+                                        </span>
+                                        <span class="flex items-center gap-1">
+                                            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+                                            <span x-text="`${o.capacity_per_hour} slot/jam`"></span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                            </button>
+                        </template>
                     </div>
                 </div>
 
-                {{-- Time slots list --}}
-                <div class="space-y-2 max-h-80 overflow-y-auto pr-1">
-                    <template x-for="group in groupedActiveDaySlots" :key="group.time">
-                        <div class="flex items-center justify-between p-3 rounded-xl border transition-all hover:shadow-sm cursor-pointer"
-                             :style="selectedGroup && selectedGroup.time === group.time ? 'background:#F3F4F6; border-color:#9CA3AF;' : (group.status === 'full' ? 'background: #FEF2F2; border-color: #FECACA;' : (group.status === 'partial' ? 'background: #FEF9EC; border-color: #FDE68A;' : 'background: #ECFDF5; border-color: #A7F3D0;'))"
-                             @click="selectGroup(group)">
-                            <div class="flex items-center gap-3">
-                                <div class="w-2 h-2 rounded-full"
-                                     :style="group.status === 'full' ? 'background: #EF4444;' : (group.status === 'partial' ? 'background: #F0C419;' : 'background: #10B981;')"></div>
-                                <span class="text-sm font-semibold text-slate-700" x-text="group.time"></span>
+                <div x-show="selectedOutlet" class="space-y-3 max-h-[450px] overflow-y-auto pr-1">
+                    <template x-for="hour in outletHours" :key="hour">
+                        <div class="p-3 rounded-xl border border-slate-100 bg-slate-50 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-xs font-bold text-slate-700 bg-slate-200 px-2 py-1 rounded" x-text="hour"></span>
+                                    <span class="text-xs font-semibold"
+                                          :class="getHourBookings(hour).length >= getOutletCapacity() ? 'text-red-600' : (getHourBookings(hour).length > 0 ? 'text-amber-600' : 'text-green-600')"
+                                          x-text="getHourBookings(hour).length + '/' + getOutletCapacity() + ' Terisi'"></span>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <span class="badge" 
+                                          :class="getHourBookings(hour).length >= getOutletCapacity() ? 'badge-red' : (getHourBookings(hour).length > 0 ? 'badge-yellow' : 'badge-green')"
+                                          x-text="getHourBookings(hour).length >= getOutletCapacity() ? 'Penuh' : (getOutletCapacity() - getHourBookings(hour).length) + ' Tersedia'"></span>
+                                    
+                                    <template x-if="getHourBookings(hour).length < getOutletCapacity()">
+                                        <button @click="prepareBookingForHour(hour)"
+                                                class="px-2.5 py-1 rounded text-[10px] font-bold text-slate-900 shadow hover:opacity-90 transition-opacity"
+                                                style="background:#F0C419;">
+                                            Reservasi
+                                        </button>
+                                    </template>
+                                </div>
                             </div>
-                            <div class="text-right">
-                                <span class="text-xs font-medium" :class="group.status === 'full' ? 'text-red-600' : (group.status === 'partial' ? 'text-amber-600' : 'text-green-600')">
-                                    <span x-text="group.booked"></span>/<span x-text="group.capacity"></span>
-                                </span>
-                                <p class="text-xs" :class="group.status === 'full' ? 'text-red-600' : (group.status === 'partial' ? 'text-amber-600' : 'text-green-600')" x-text="group.status === 'full' ? 'Penuh' : (group.status === 'partial' ? 'Sebagian' : 'Tersedia')"></p>
+                            
+                            <div class="space-y-1.5 pl-2">
+                                <template x-for="b in getHourBookings(hour)" :key="b.id">
+                                    <div class="p-2 bg-white rounded-lg border border-slate-200 text-xs space-y-1 shadow-sm">
+                                        <div class="flex justify-between items-center">
+                                            <span class="font-mono font-bold text-slate-800 text-[11px]" x-text="b.booking_code"></span>
+                                            <span class="badge" :class="{
+                                                'badge-yellow': b.status === 'pending',
+                                                'badge-purple': b.status === 'confirmed',
+                                                'badge-blue': ['assigned', 'on_way', 'in_progress'].includes(b.status),
+                                                'badge-green': b.status === 'completed',
+                                                'badge-red': b.status === 'cancelled'
+                                            }" x-text="b.status_label"></span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 grid grid-cols-2 gap-x-2 gap-y-0.5">
+                                            <div>Pelanggan: <span class="font-bold text-slate-700" x-text="b.customer_name"></span></div>
+                                            <div>Tipe: <span class="font-semibold text-slate-700 uppercase" x-text="b.vehicle_type === 'roda_2' ? 'Motor' : 'Mobil'"></span></div>
+                                            <div class="col-span-2">Kendaraan: <span class="font-semibold text-slate-700" x-text="b.vehicle_name"></span></div>
+                                        </div>
+                                    </div>
+                                </template>
+                                <template x-if="getHourBookings(hour).length === 0">
+                                    <div class="text-slate-400 text-xs italic flex items-center gap-1.5 py-1">
+                                        <span class="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+                                        Slot Kosong (Tersedia)
+                                    </div>
+                                </template>
                             </div>
                         </div>
                     </template>
-                    <div x-show="groupedActiveDaySlots.length === 0" class="text-center py-8 text-sm text-slate-400">
-                        Tidak ada slot cuci pada tanggal ini.
-                    </div>
-                </div>
-
-                {{-- Grouped Slot details --}}
-                <div x-show="selectedGroup" class="mt-4 space-y-3 pt-3 border-t border-slate-100" x-cloak>
-                    <div class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-                        Detail Outlet untuk Jam <span x-text="selectedGroup ? selectedGroup.time : ''"></span>:
-                    </div>
-                    
-                    <div class="space-y-2 max-h-60 overflow-y-auto pr-1">
-                        <template x-for="item in (selectedGroup ? selectedGroup.slots : [])" :key="item.id">
-                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <span class="text-xs font-semibold text-slate-700" x-text="item.outlet_name"></span>
-                                    <span class="badge" :class="item.status === 'full' ? 'badge-red' : (item.status === 'partial' ? 'badge-yellow' : 'badge-green')" x-text="item.status === 'full' ? 'Penuh' : (item.capacity - item.booked) + '/' + item.capacity + ' Tersedia'"></span>
-                                </div>
-                                <div class="flex gap-2 justify-end">
-                                    <!-- Reservasi Slot Button -->
-                                    <button @click="prepareBooking(item)"
-                                            class="px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-slate-900 shadow hover:opacity-90 transition-opacity"
-                                            style="background:#F0C419;"
-                                            :disabled="item.status === 'full'"
-                                            :class="item.status === 'full' ? 'opacity-50 cursor-not-allowed' : ''">
-                                        Reservasi
-                                    </button>
-                                    
-                                    <!-- Hapus Slot Form -->
-                                    <form :action="'/slots/' + item.id" method="POST" class="inline" @submit="return confirm('Apakah Anda yakin ingin menghapus slot ini?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" 
-                                                class="px-2 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-red-600 hover:bg-red-700 shadow transition-colors"
-                                                x-show="item.booked === 0">
-                                            Hapus
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
                 </div>
             </div>
 
@@ -393,6 +421,14 @@ function slotPage() {
         get monthName() {
             return ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][this.month];
         },
+        getOutletHoursCount(outlet) {
+            if (!outlet) return 0;
+            const openTime = outlet.open_time || '07:00';
+            const closeTime = outlet.close_time || '20:00';
+            const [openH] = openTime.split(':').map(Number);
+            const [closeH] = closeTime.split(':').map(Number);
+            return Math.max(0, closeH - openH + 1);
+        },
         get calendarCells() {
             const firstDay = new Date(this.year, this.month, 1).getDay();
             const days = new Date(this.year, this.month + 1, 0).getDate();
@@ -403,21 +439,38 @@ function slotPage() {
                 const isPast = new Date(this.year, this.month, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const statuses = [];
                 const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                let daySlots = this.slots.filter(s => s.slot_date.substring(0, 10) === dateStr);
+                
+                let capacity = 0;
+                let booked = 0;
+
                 if (this.selectedOutlet) {
-                    daySlots = daySlots.filter(s => String(s.outlet_id) === String(this.selectedOutlet));
+                    const outlet = this.outlets.find(o => String(o.id) === String(this.selectedOutlet));
+                    if (outlet) {
+                        capacity = this.getOutletHoursCount(outlet) * (outlet.capacity_per_hour || 3);
+                        booked = this.bookings.filter(b => {
+                            return b.scheduled_date === dateStr &&
+                                   String(b.outlet_id) === String(this.selectedOutlet);
+                        }).length;
+                    }
+                } else {
+                    this.outlets.forEach(outlet => {
+                        capacity += this.getOutletHoursCount(outlet) * (outlet.capacity_per_hour || 3);
+                    });
+                    booked = this.bookings.filter(b => b.scheduled_date === dateStr).length;
                 }
-                if (daySlots.length > 0) {
-                    const totalCapacity = daySlots.reduce((sum, s) => sum + s.capacity, 0);
-                    const totalBooked = daySlots.reduce((sum, s) => sum + s.booked_count, 0);
-                    if (totalBooked === 0) {
+
+                if (capacity > 0) {
+                    if (booked === 0) {
                         statuses.push('available');
-                    } else if (totalBooked >= totalCapacity) {
+                    } else if (booked >= capacity) {
                         statuses.push('full');
                     } else {
                         statuses.push('busy');
                     }
+                } else {
+                    statuses.push('available');
                 }
+
                 cells.push({ day: d, isPast, status: statuses });
             }
             return cells;
@@ -478,12 +531,26 @@ function slotPage() {
         get selectedDateCapacityStats() {
             if (!this.selectedDay) return { capacity: 0, booked: 0, available: 0, pct: 0 };
             const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(this.selectedDay).padStart(2, '0')}`;
-            let daySlots = this.slots.filter(s => s.slot_date.substring(0, 10) === dateStr);
+            
+            let capacity = 0;
+            let booked = 0;
+
             if (this.selectedOutlet) {
-                daySlots = daySlots.filter(s => String(s.outlet_id) === String(this.selectedOutlet));
+                const outlet = this.outlets.find(o => String(o.id) === String(this.selectedOutlet));
+                if (outlet) {
+                    capacity = this.getOutletHoursCount(outlet) * (outlet.capacity_per_hour || 3);
+                    booked = this.bookings.filter(b => {
+                        return b.scheduled_date === dateStr &&
+                               String(b.outlet_id) === String(this.selectedOutlet);
+                    }).length;
+                }
+            } else {
+                this.outlets.forEach(outlet => {
+                    capacity += this.getOutletHoursCount(outlet) * (outlet.capacity_per_hour || 3);
+                });
+                booked = this.bookings.filter(b => b.scheduled_date === dateStr).length;
             }
-            const capacity = daySlots.reduce((sum, s) => sum + s.capacity, 0);
-            const booked = daySlots.reduce((sum, s) => sum + s.booked_count, 0);
+
             const available = Math.max(0, capacity - booked);
             const pct = capacity > 0 ? Math.round((booked / capacity) * 100) : 0;
             return { capacity, booked, available, pct };
@@ -494,8 +561,55 @@ function slotPage() {
             return this.bookings.filter(b => {
                 const matchesDate = b.scheduled_date === dateStr;
                 const matchesOutlet = this.selectedOutlet ? String(b.outlet_id) === String(this.selectedOutlet) : true;
-                return matchesDate && matchesOutlet;
+                return matchesDate && matchesOutlet && b.status !== 'completed' && b.status !== 'cancelled';
             });
+        },
+        get outletHours() {
+            if (!this.selectedOutlet) return [];
+            const outlet = this.outlets.find(o => String(o.id) === String(this.selectedOutlet));
+            if (!outlet) return [];
+
+            const openTime = outlet.open_time || '07:00';
+            const closeTime = outlet.close_time || '20:00';
+            const [openH] = openTime.split(':').map(Number);
+            const [closeH] = closeTime.split(':').map(Number);
+
+            const hours = [];
+            for (let h = openH; h <= closeH; h++) {
+                const timeStr = String(h).padStart(2, '0') + ':00';
+                hours.push(timeStr);
+            }
+            return hours;
+        },
+        getOutletCapacity() {
+            if (!this.selectedOutlet) return 3;
+            const outlet = this.outlets.find(o => String(o.id) === String(this.selectedOutlet));
+            return outlet ? outlet.capacity_per_hour : 3;
+        },
+        getHourBookings(hour) {
+            if (!this.selectedDay || !this.selectedOutlet) return [];
+            const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(this.selectedDay).padStart(2, '0')}`;
+            return this.bookings.filter(b => {
+                return b.scheduled_date === dateStr &&
+                       String(b.outlet_id) === String(this.selectedOutlet) &&
+                       b.scheduled_time.substring(0, 5) === hour.substring(0, 5) &&
+                       b.status !== 'completed' && b.status !== 'cancelled';
+            });
+        },
+        prepareBookingForHour(hour) {
+            const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(this.selectedDay).padStart(2, '0')}`;
+            const outlet = this.outlets.find(o => String(o.id) === String(this.selectedOutlet));
+            
+            const existingSlot = this.activeDaySlots.find(s => s.time === hour.substring(0, 5) && String(s.outlet_id) === String(this.selectedOutlet));
+            
+            this.selectedSlot = {
+                id: existingSlot ? existingSlot.id : '',
+                outlet_id: this.selectedOutlet,
+                outlet_name: outlet ? outlet.name : '',
+                date: dateStr,
+                time: hour
+            };
+            this.showBookSlot = true;
         },
         selectDate(cell) { 
             if (cell.day) { 

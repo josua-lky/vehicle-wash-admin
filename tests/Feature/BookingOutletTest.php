@@ -192,4 +192,43 @@ class BookingOutletTest extends TestCase
         $response->assertStatus(422);
         $this->assertStringContainsString('penuh', $response->json('message'));
     }
+
+    public function test_booking_slot_count_increments_on_create_and_decrements_on_complete()
+    {
+        $customer = Customer::first();
+        $vehicle = Vehicle::where('customer_id', $customer->id)->first();
+        $package = Package::first();
+        $outlet = Outlet::first();
+        $scheduledAt = now()->addDays(2);
+
+        $payload = [
+            'vehicle_id' => $vehicle->id,
+            'package_id' => $package->id,
+            'service_type' => 'outlet',
+            'scheduled_at' => $scheduledAt->format('Y-m-d H:i:s'),
+            'service_address' => $outlet->address,
+            'outlet_id' => $outlet->id,
+        ];
+
+        // 1. Create booking
+        $response = $this->actingAs($customer, 'sanctum')
+            ->postJson('/api/bookings', $payload);
+
+        $response->assertStatus(200);
+        $bookingId = $response->json('booking.id');
+        $booking = Booking::find($bookingId);
+        $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
+
+        $this->assertNotNull($slot);
+        $this->assertEquals(1, $slot->fresh()->booked_count);
+
+        // 2. Complete booking (via admin controller action)
+        $admin = \App\Models\User::first();
+        $booking->update(['status' => 'confirmed']); // complete requires confirmed first
+        $this->actingAs($admin)
+            ->patch("/bookings/{$booking->id}/complete");
+
+        $this->assertEquals('completed', $booking->fresh()->status);
+        $this->assertEquals(0, $slot->fresh()->booked_count);
+    }
 }

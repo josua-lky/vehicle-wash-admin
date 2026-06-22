@@ -191,6 +191,12 @@ class BookingController extends Controller
             $booking->technician->update(['status' => 'active']);
             $booking->technician->updateRating();
         }
+        if ($booking->outlet_slot_id) {
+            $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
+            if ($slot && $slot->booked_count > 0) {
+                $slot->decrement('booked_count');
+            }
+        }
         return back()->with('success', "Booking {$booking->booking_code} berhasil diselesaikan.");
     }
 

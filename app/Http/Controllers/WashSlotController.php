@@ -11,9 +11,29 @@ class WashSlotController extends Controller
     {
         $outlets = Outlet::where('status','active')->get();
         $selectedOutlet = $request->outlet_id ? Outlet::find($request->outlet_id) : null;
+
+        $bookings = \App\Models\Booking::with(['customer', 'package', 'outlet'])
+            ->where('service_type', 'outlet')
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->whereHas('outlet', fn($q) => $q->where('status', 'active'))
+            ->when($request->outlet_id, fn($q) => $q->where('outlet_id', $request->outlet_id))
+            ->orderBy('scheduled_at')
+            ->get();
+
         $slots = WashSlot::whereHas('outlet', fn($q)=>$q->where('status','active'))
                          ->when($request->outlet_id, fn($q)=>$q->where('outlet_id',$request->outlet_id))
                          ->with('outlet')->orderBy('slot_date')->orderBy('slot_time')->get();
+
+        foreach ($slots as $slot) {
+            $slotDateStr = \Carbon\Carbon::parse($slot->slot_date)->toDateString();
+            $slotTimeStr = substr($slot->slot_time, 0, 5);
+            $slot->booked_count = $bookings->filter(function ($b) use ($slot, $slotDateStr, $slotTimeStr) {
+                return $b->outlet_id == $slot->outlet_id &&
+                       $b->scheduled_at->toDateString() === $slotDateStr &&
+                       $b->scheduled_at->format('H:i') === $slotTimeStr;
+            })->count();
+        }
+
         $stats = [
             'total'            => $slots->count(),
             'available_slots'  => $slots->filter(fn($s) => $s->status === 'available' && $s->booked_count < $s->capacity)->count(),
@@ -29,13 +49,6 @@ class WashSlotController extends Controller
 
         $customers = \App\Models\Customer::where('status', 'active')->get();
         $packages = \App\Models\Package::where('is_active', true)->get();
-
-        $bookings = \App\Models\Booking::with(['customer', 'package', 'outlet'])
-            ->where('service_type', 'outlet')
-            ->whereHas('outlet', fn($q) => $q->where('status', 'active'))
-            ->when($request->outlet_id, fn($q) => $q->where('outlet_id', $request->outlet_id))
-            ->orderBy('scheduled_at')
-            ->get();
 
         $bookingsData = $bookings->map(function ($b) {
             return [
@@ -86,8 +99,29 @@ class WashSlotController extends Controller
         $slots = WashSlot::where('outlet_id',$request->outlet_id)
                          ->whereDate('slot_date',$request->date)
                          ->where('status','available')
-                         ->whereRaw('booked_count < capacity')
-                         ->get(['id','slot_time','capacity','booked_count']);
-        return response()->json($slots);
+                         ->get();
+        
+        $bookings = \App\Models\Booking::where('service_type', 'outlet')
+            ->where('outlet_id', $request->outlet_id)
+            ->whereDate('scheduled_at', $request->date)
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->get();
+
+        $filteredSlots = $slots->filter(function ($slot) use ($bookings) {
+            $slotTimeStr = substr($slot->slot_time, 0, 5);
+            $slot->booked_count = $bookings->filter(function ($b) use ($slotTimeStr) {
+                return $b->scheduled_at->format('H:i') === $slotTimeStr;
+            })->count();
+            return $slot->booked_count < $slot->capacity;
+        })->values()->map(function ($slot) {
+            return [
+                'id' => $slot->id,
+                'slot_time' => $slot->slot_time,
+                'capacity' => $slot->capacity,
+                'booked_count' => $slot->booked_count
+            ];
+        });
+
+        return response()->json($filteredSlots);
     }
 }

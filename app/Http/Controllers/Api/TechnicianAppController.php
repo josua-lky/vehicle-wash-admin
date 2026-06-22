@@ -98,6 +98,14 @@ class TechnicianAppController extends Controller
         if ($validated['status'] === 'completed') {
             // Update technician rating and total orders count
             $request->user()->updateRating();
+            
+            // Decrement slot booked count if it exists
+            if ($booking->outlet_slot_id) {
+                $slot = \App\Models\WashSlot::find($booking->outlet_slot_id);
+                if ($slot && $slot->booked_count > 0) {
+                    $slot->decrement('booked_count');
+                }
+            }
         }
 
         return response()->json([
