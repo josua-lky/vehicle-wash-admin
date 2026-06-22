@@ -85,14 +85,14 @@ class BookingController extends Controller
     public function show(Booking $booking)
     {
         $booking->load(['customer', 'technician', 'package', 'payment', 'outlet']);
-        $technicians = Technician::where('status', 'active')->get();
+        $technicians = Technician::whereIn('status', ['active', 'busy'])->get();
         return view('bookings.show', compact('booking', 'technicians'));
     }
 
     public function create()
     {
         $customers   = Customer::where('status', 'active')->get();
-        $technicians = Technician::where('status', 'active')->get();
+        $technicians = Technician::whereIn('status', ['active', 'busy'])->get();
         $packages    = Package::where('is_active', true)->get();
         $outlets     = Outlet::where('status', 'active')->get();
         return view('bookings.create', compact('customers', 'technicians', 'packages', 'outlets'));

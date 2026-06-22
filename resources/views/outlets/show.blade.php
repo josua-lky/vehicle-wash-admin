@@ -22,9 +22,21 @@
                     <h2 class="text-lg font-bold text-slate-800">{{ $outlet->name }}</h2>
                     @php
                         $isActive = $outlet->status === 'active';
+                        $isClosedTime = false;
+                        if ($isActive && $outlet->open_time && $outlet->close_time) {
+                            $now = now();
+                            $nowTimeStr = $now->format('H:i:s');
+                            $openTimeStr = \Carbon\Carbon::parse($outlet->open_time)->format('H:i:s');
+                            $closeTimeStr = \Carbon\Carbon::parse($outlet->close_time)->format('H:i:s');
+                            if ($nowTimeStr >= $closeTimeStr || $nowTimeStr < $openTimeStr) {
+                                $isClosedTime = true;
+                            }
+                        }
+                        $displayStatus = $isActive ? ($isClosedTime ? 'Tutup' : 'Aktif') : ($outlet->status === 'maintenance' ? 'Maintenance' : 'Nonaktif');
+                        $badgeClass = $isActive ? ($isClosedTime ? 'badge-red' : 'badge-green') : ($outlet->status === 'maintenance' ? 'badge-yellow' : 'badge-red');
                     @endphp
-                    <span class="badge {{ $isActive?'badge-green':($outlet->status==='maintenance'?'badge-yellow':'badge-red') }}">
-                        {{ $isActive?'Aktif':($outlet->status==='maintenance'?'Maintenance':'Nonaktif') }}
+                    <span class="badge {{ $badgeClass }}">
+                        {{ $displayStatus }}
                     </span>
                 </div>
                 <p class="text-sm text-slate-500">{{ $outlet->address }}</p>
@@ -48,7 +60,7 @@
                         $open = \Carbon\Carbon::parse($outlet->open_time);
                         $close = \Carbon\Carbon::parse($outlet->close_time);
                         $hours = $close->diffInHours($open);
-                        $slotsToday = $outlet->status === 'active' ? ($hours * $outlet->capacity_per_hour) : 0;
+                        $slotsToday = ($outlet->status === 'active' && !$isClosedTime) ? ($hours * $outlet->capacity_per_hour) : 0;
                     @endphp
                     <span class="font-medium text-slate-700">{{ $slotsToday }} slot</span>
                 </div>

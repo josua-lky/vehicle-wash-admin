@@ -27,6 +27,26 @@ class Outlet extends Model
         $this->update(['rating' => $avg ? round($avg, 2) : 0.00]);
     }
 
+    public function isClosedNow()
+    {
+        if ($this->status !== 'active') {
+            return true;
+        }
+        if (!$this->open_time || !$this->close_time) {
+            return true;
+        }
+
+        $now = now();
+        $open = \Carbon\Carbon::parse($this->open_time);
+        $close = \Carbon\Carbon::parse($this->close_time);
+
+        $nowTimeStr = $now->format('H:i:s');
+        $openTimeStr = $open->format('H:i:s');
+        $closeTimeStr = $close->format('H:i:s');
+
+        return ($nowTimeStr >= $closeTimeStr || $nowTimeStr < $openTimeStr);
+    }
+
     public function getAvailableSlotsForDate(string $date)
     {
         return $this->slots()->whereDate('slot_date',$date)

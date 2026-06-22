@@ -20,6 +20,7 @@ class OutletManagementTest extends TestCase
 
     public function test_outlet_index_page_loads_with_required_view_variables()
     {
+        \Carbon\Carbon::setTestNow('2026-06-22 10:00:00');
         $user = User::first() ?? User::factory()->create([
             'role' => 'super_admin'
         ]);
@@ -93,5 +94,7 @@ class OutletManagementTest extends TestCase
         $newCapacity = $initialCapacity + 56;
         $expectedUtilization = ($newCapacity > 0 ? round(($newBooked / $newCapacity) * 100) : 0) . '%';
         $this->assertEquals($expectedUtilization, $stats['utilization']);
+        
+        \Carbon\Carbon::setTestNow();
     }
 }

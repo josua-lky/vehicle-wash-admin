@@ -89,7 +89,7 @@ Route::get('/outlets', function() {
 });
 
 Route::get('/technicians', function() {
-    return response()->json(Technician::where('status', 'active')
+    return response()->json(Technician::whereIn('status', ['active', 'busy'])
         ->with(['bookings' => function($query) {
             $query->whereNotIn('status', ['cancelled', 'completed'])
                   ->select('id', 'technician_id', 'scheduled_at', 'status');

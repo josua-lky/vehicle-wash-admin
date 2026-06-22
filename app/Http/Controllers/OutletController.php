@@ -24,6 +24,9 @@ class OutletController extends Controller
         $availableSlots = Outlet::where('status', 'active')
             ->get()
             ->sum(function ($outlet) {
+                if ($outlet->isClosedNow()) {
+                    return 0;
+                }
                 if (!$outlet->open_time || !$outlet->close_time) {
                     return 0;
                 }
