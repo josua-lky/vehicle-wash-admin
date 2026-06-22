@@ -156,7 +156,7 @@ function notificationPage() {
             }
         },
         async deleteAllNotifications() {
-            if (!confirm('Hapus semua riwayat notifikasi?')) return;
+            if (!confirm('Apakah Anda yakin ingin menghapus semua notifikasi?')) return;
             try {
                 const response = await fetch('/notifications/delete-all', {
                     method: 'DELETE',

@@ -105,19 +105,20 @@ public function login(Request $request)
         $request->email
     )->first();
 
+    if (!$customer) {
+        return response()->json([
+            'message' => 'silahkan daftar terlebih dahulu'
+        ], 401);
+    }
+
     if (
-        !$customer ||
         !Hash::check(
             $request->password,
             $customer->password
         )
     ) {
-
         return response()->json([
-
-            'message' =>
-                'Invalid credentials'
-
+            'message' => 'email/password salah'
         ], 401);
     }
 
