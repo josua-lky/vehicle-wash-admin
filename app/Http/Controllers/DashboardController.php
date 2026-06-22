@@ -131,11 +131,6 @@ class DashboardController extends Controller
         return view('dashboard.onboarding', ['layout' => 'layouts.guest']);
     }
 
-    public function onboarding()
-    {
-        return view('dashboard.onboarding', ['layout' => 'layouts.app']);
-    }
-
     public function export(Request $request)
     {
         $year = intval($request->get('year', now()->year));
