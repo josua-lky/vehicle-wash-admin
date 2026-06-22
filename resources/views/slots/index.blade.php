@@ -11,10 +11,10 @@
             <p class="text-sm text-slate-500 mt-0.5">Kelola ketersediaan slot waktu di setiap outlet</p>
         </div>
         <div class="flex gap-2">
-            <select x-model="selectedOutlet" @change="window.location.href = '/slots?outlet_id=' + selectedOutlet" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
+            <select x-model="selectedOutlet" @change="history.replaceState(null, '', '/slots' + (selectedOutlet ? '?outlet_id=' + selectedOutlet : ''))" class="text-sm border border-slate-200 rounded-lg px-3 py-2 text-slate-600 bg-white">
                 <option value="">Semua Outlet</option>
                 @foreach($outlets ?? [] as $o)
-                <option value="{{ $o->id }}" {{ request('outlet_id') == $o->id ? 'selected' : '' }}>{{ $o->name }}</option>
+                <option value="{{ $o->id }}">{{ $o->name }}</option>
                 @endforeach
             </select>
             <button @click="showAddSlot=true"
@@ -135,7 +135,7 @@
                             <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-2">
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs font-semibold text-slate-700" x-text="item.outlet_name"></span>
-                                    <span class="badge" :class="item.status === 'full' ? 'badge-red' : (item.status === 'partial' ? 'badge-yellow' : 'badge-green')" x-text="item.booked + '/' + item.capacity + ' Terisi'"></span>
+                                    <span class="badge" :class="item.status === 'full' ? 'badge-red' : (item.status === 'partial' ? 'badge-yellow' : 'badge-green')" x-text="item.status === 'full' ? 'Penuh' : (item.capacity - item.booked) + '/' + item.capacity + ' Tersedia'"></span>
                                 </div>
                                 <div class="flex gap-2 justify-end">
                                     <!-- Reservasi Slot Button -->
@@ -166,32 +166,28 @@
 
             {{-- Capacity Summary --}}
             <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-100">
-                <h3 class="text-sm font-semibold text-slate-800 mb-4">Kapasitas Hari Ini</h3>
-                @php
-                $totalCap = $todayStats['capacity'] ?? 0;
-                $booked = $todayStats['booked'] ?? 0;
-                $avail = max(0, $totalCap - $booked);
-                $pct = $totalCap > 0 ? round($booked / $totalCap * 100) : 0;
-                @endphp
+                <h3 class="text-sm font-semibold text-slate-800 mb-4" x-text="'Kapasitas ' + (selectedDay ? monthName+' '+selectedDay+', '+year : 'Hari Ini')"></h3>
                 <div class="text-center mb-4">
-                    <p class="text-3xl font-bold text-slate-800">{{ $booked }}<span class="text-slate-300 text-xl">/{{ $totalCap }}</span></p>
-                    <p class="text-xs text-slate-400 mt-1">slot terisi hari ini</p>
+                    <p class="text-3xl font-bold text-slate-800">
+                        <span x-text="selectedDateCapacityStats.booked"></span><span class="text-slate-300 text-xl">/<span x-text="selectedDateCapacityStats.capacity"></span></span>
+                    </p>
+                    <p class="text-xs text-slate-400 mt-1">slot terisi pada tanggal ini</p>
                 </div>
                 <div class="h-3 bg-slate-100 rounded-full overflow-hidden mb-2">
-                    <div class="h-full rounded-full transition-all" style="width:{{ $pct }}%; background:linear-gradient(to right,#F0C419,#E67E22);"></div>
+                    <div class="h-full rounded-full transition-all" :style="'width: ' + selectedDateCapacityStats.pct + '%; background:linear-gradient(to right,#F0C419,#E67E22);'"></div>
                 </div>
                 <div class="flex justify-between text-xs text-slate-500">
-                    <span class="text-green-600 font-medium">{{ $avail }} tersedia</span>
-                    <span class="text-amber-600 font-medium">{{ $pct }}% terisi</span>
+                    <span class="text-green-600 font-medium" x-text="selectedDateCapacityStats.available + ' tersedia'"></span>
+                    <span class="text-amber-600 font-medium" x-text="selectedDateCapacityStats.pct + '% terisi'"></span>
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">
                     <div class="p-3 rounded-xl text-center" style="background:#F8FAFC;">
-                        <p class="text-lg font-bold text-slate-800">{{ $avail }}</p>
+                        <p class="text-lg font-bold text-slate-800" x-text="selectedDateCapacityStats.available"></p>
                         <p class="text-xs text-slate-400">Slot Tersedia</p>
                     </div>
                     <div class="p-3 rounded-xl text-center" style="background:#FEF9EC;">
-                        <p class="text-lg font-bold" style="color:#F0C419;">{{ $booked }}</p>
+                        <p class="text-lg font-bold" style="color:#F0C419;" x-text="selectedDateCapacityStats.booked"></p>
                         <p class="text-xs text-slate-400">Sudah Dipesan</p>
                     </div>
                 </div>
@@ -202,7 +198,7 @@
     {{-- QUICK SLOTS TABLE --}}
     <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="font-semibold text-slate-800">Daftar Booking Slot Hari Ini</h3>
+            <h3 class="font-semibold text-slate-800" x-text="'Daftar Booking Slot Tanggal ' + (selectedDay ? monthName+' '+selectedDay+', '+year : 'Hari Ini')"></h3>
             <a href="/bookings?service_type=outlet" class="text-xs font-medium" style="color:#F0C419;">Lihat Semua →</a>
         </div>
         <div class="overflow-x-auto">
@@ -218,48 +214,43 @@
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-50">
-                    @forelse($todayBookings ?? [] as $tb)
-                    <tr class="table-row">
-                        <td class="px-5 py-3.5"><span class="font-mono text-xs font-semibold text-slate-700">{{ $tb->booking_code }}</span></td>
-                        <td class="px-4 py-3.5 text-slate-700">{{ $tb->customer->name ?? '-' }}</td>
-                        <td class="px-4 py-3.5 text-slate-600 text-xs">
-                            {{ $tb->vehicle_name }} 
-                            <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase">{{ str_replace('_', ' ', $tb->vehicle_type) }}</span>
-                        </td>
-                        <td class="px-4 py-3.5 text-xs text-slate-600">{{ $tb->scheduled_at->format('d M Y, H:i') }}</td>
-                        <td class="px-4 py-3.5">
-                            @php 
-                            $sc = [
-                                'pending' => 'badge-yellow',
-                                'confirmed' => 'badge-purple',
-                                'assigned' => 'badge-blue',
-                                'on_way' => 'badge-blue',
-                                'in_progress' => 'badge-blue',
-                                'completed' => 'badge-green',
-                                'cancelled' => 'badge-red'
-                            ]; 
-                            @endphp
-                            <span class="badge {{ $sc[$tb->status] ?? 'badge-gray' }}">{{ $tb->status_label }}</span>
-                        </td>
-                        <td class="px-4 py-3.5">
-                            <div class="flex gap-1">
-                                <a href="/bookings/{{ $tb->id }}" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Detail</a>
-                                @if($tb->status !== 'completed' && $tb->status !== 'cancelled')
-                                <form method="POST" action="/bookings/{{ $tb->id }}">
-                                    @csrf
-                                    @method('PUT')
-                                    <input type="hidden" name="status" value="completed">
-                                    <button class="text-xs px-2.5 py-1.5 rounded-lg text-white" style="background:#10B981;">Selesai</button>
-                                </form>
-                                @endif
-                            </div>
-                        </td>
+                    <template x-for="tb in selectedDateBookings" :key="tb.id">
+                        <tr class="table-row">
+                            <td class="px-5 py-3.5"><span class="font-mono text-xs font-semibold text-slate-700" x-text="tb.booking_code"></span></td>
+                            <td class="px-4 py-3.5 text-slate-700" x-text="tb.customer_name"></td>
+                            <td class="px-4 py-3.5 text-slate-600 text-xs">
+                                <span x-text="tb.vehicle_name"></span> 
+                                <span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 uppercase" x-text="tb.vehicle_type === 'roda_2' ? 'Motor' : 'Mobil'"></span>
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-slate-600" x-text="tb.scheduled_time"></td>
+                            <td class="px-4 py-3.5">
+                                <span class="badge" :class="{
+                                    'badge-yellow': tb.status === 'pending',
+                                    'badge-purple': tb.status === 'confirmed',
+                                    'badge-blue': ['assigned', 'on_way', 'in_progress'].includes(tb.status),
+                                    'badge-green': tb.status === 'completed',
+                                    'badge-red': tb.status === 'cancelled',
+                                    'badge-gray': !['pending', 'confirmed', 'assigned', 'on_way', 'in_progress', 'completed', 'cancelled'].includes(tb.status)
+                                }" x-text="tb.status_label"></span>
+                            </td>
+                            <td class="px-4 py-3.5">
+                                <div class="flex gap-1">
+                                    <a :href="'/bookings/' + tb.id" class="text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">Detail</a>
+                                    <template x-if="tb.status !== 'completed' && tb.status !== 'cancelled'">
+                                        <form method="POST" :action="'/bookings/' + tb.id">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="status" value="completed">
+                                            <button class="text-xs px-2.5 py-1.5 rounded-lg text-white" style="background:#10B981;">Selesai</button>
+                                        </form>
+                                    </template>
+                                </div>
+                            </td>
+                        </tr>
+                    </template>
+                    <tr x-show="selectedDateBookings.length === 0">
+                        <td colspan="6" class="text-center py-8 text-slate-400 text-sm">Tidak ada booking untuk slot cuci pada tanggal ini.</td>
                     </tr>
-                    @empty
-                    <tr>
-                        <td colspan="6" class="text-center py-8 text-slate-400 text-sm">Tidak ada booking untuk slot cuci hari ini.</td>
-                    </tr>
-                    @endforelse
                 </tbody>
             </table>
         </div>
@@ -398,6 +389,7 @@ function slotPage() {
         viewMode: 'month',
         slots: @json($slots),
         outlets: @json($outlets),
+        bookings: @json($bookingsData),
         get monthName() {
             return ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'][this.month];
         },
@@ -410,22 +402,20 @@ function slotPage() {
             for (let d = 1; d <= days; d++) {
                 const isPast = new Date(this.year, this.month, d) < new Date(now.getFullYear(), now.getMonth(), now.getDate());
                 const statuses = [];
-                if (!isPast) {
-                    const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    let daySlots = this.slots.filter(s => s.slot_date.substring(0, 10) === dateStr);
-                    if (this.selectedOutlet) {
-                        daySlots = daySlots.filter(s => String(s.outlet_id) === String(this.selectedOutlet));
-                    }
-                    if (daySlots.length > 0) {
-                        const totalCapacity = daySlots.reduce((sum, s) => sum + s.capacity, 0);
-                        const totalBooked = daySlots.reduce((sum, s) => sum + s.booked_count, 0);
-                        if (totalBooked === 0) {
-                            statuses.push('available');
-                        } else if (totalBooked >= totalCapacity) {
-                            statuses.push('full');
-                        } else {
-                            statuses.push('busy');
-                        }
+                const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                let daySlots = this.slots.filter(s => s.slot_date.substring(0, 10) === dateStr);
+                if (this.selectedOutlet) {
+                    daySlots = daySlots.filter(s => String(s.outlet_id) === String(this.selectedOutlet));
+                }
+                if (daySlots.length > 0) {
+                    const totalCapacity = daySlots.reduce((sum, s) => sum + s.capacity, 0);
+                    const totalBooked = daySlots.reduce((sum, s) => sum + s.booked_count, 0);
+                    if (totalBooked === 0) {
+                        statuses.push('available');
+                    } else if (totalBooked >= totalCapacity) {
+                        statuses.push('full');
+                    } else {
+                        statuses.push('busy');
                     }
                 }
                 cells.push({ day: d, isPast, status: statuses });
@@ -485,8 +475,30 @@ function slotPage() {
                 };
             }).sort((a, b) => a.time.localeCompare(b.time));
         },
+        get selectedDateCapacityStats() {
+            if (!this.selectedDay) return { capacity: 0, booked: 0, available: 0, pct: 0 };
+            const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(this.selectedDay).padStart(2, '0')}`;
+            let daySlots = this.slots.filter(s => s.slot_date.substring(0, 10) === dateStr);
+            if (this.selectedOutlet) {
+                daySlots = daySlots.filter(s => String(s.outlet_id) === String(this.selectedOutlet));
+            }
+            const capacity = daySlots.reduce((sum, s) => sum + s.capacity, 0);
+            const booked = daySlots.reduce((sum, s) => sum + s.booked_count, 0);
+            const available = Math.max(0, capacity - booked);
+            const pct = capacity > 0 ? Math.round((booked / capacity) * 100) : 0;
+            return { capacity, booked, available, pct };
+        },
+        get selectedDateBookings() {
+            if (!this.selectedDay) return [];
+            const dateStr = `${this.year}-${String(this.month + 1).padStart(2, '0')}-${String(this.selectedDay).padStart(2, '0')}`;
+            return this.bookings.filter(b => {
+                const matchesDate = b.scheduled_date === dateStr;
+                const matchesOutlet = this.selectedOutlet ? String(b.outlet_id) === String(this.selectedOutlet) : true;
+                return matchesDate && matchesOutlet;
+            });
+        },
         selectDate(cell) { 
-            if (cell.day && !cell.isPast) { 
+            if (cell.day) { 
                 this.selectedDay = cell.day; 
                 this.selectedSlot = null; 
                 this.selectedGroup = null;
@@ -500,9 +512,36 @@ function slotPage() {
             this.selectedSlot = slot;
             this.showBookSlot = true;
         },
-        prevMonth() { if (this.month === 0) { this.month = 11; this.year--; } else this.month--; },
-        nextMonth() { if (this.month === 11) { this.month = 0; this.year++; } else this.month++; },
-        gotoToday() { const t = new Date(); this.month = t.getMonth(); this.year = t.getFullYear(); this.selectedDay = t.getDate(); },
+        prevMonth() { 
+            if (this.month === 0) { 
+                this.month = 11; 
+                this.year--; 
+            } else {
+                this.month--; 
+            }
+            this.selectedDay = 1;
+            this.selectedGroup = null;
+            this.selectedSlot = null;
+        },
+        nextMonth() { 
+            if (this.month === 11) { 
+                this.month = 0; 
+                this.year++; 
+            } else {
+                this.month++; 
+            }
+            this.selectedDay = 1;
+            this.selectedGroup = null;
+            this.selectedSlot = null;
+        },
+        gotoToday() { 
+            const t = new Date(); 
+            this.month = t.getMonth(); 
+            this.year = t.getFullYear(); 
+            this.selectedDay = t.getDate(); 
+            this.selectedGroup = null;
+            this.selectedSlot = null;
+        },
     }
 }
 </script>
